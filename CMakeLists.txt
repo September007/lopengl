@@ -25,6 +25,7 @@ set(extern_include_dirs
   "extern/glad/include"
   "extern/glew-2.1.0/include"
   "extern/glfw-3.0.4/include"
+  "./src/include"
 )
 include_directories(${extern_include_dirs})
 
