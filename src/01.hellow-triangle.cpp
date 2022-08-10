@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <helper/helper.h>
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -85,9 +86,14 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(program.getProgram());
-        int tm = glfwGetTime();
+        double tm = glfwGetTime();
+        int itm=tm;
         glBindVertexArray(VAO);
-        if (tm & 2)
+        GLfloat greenValue=GLfloat(sin(tm))*0.5+0.5;
+        
+        int uniform_color_location=glGetUniformLocation(program.getProgram(),"uniform_color");
+        glUniform4f(uniform_color_location,0,greenValue,0,1);
+        if (itm & 2)
             glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         else
             glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 3 + (GLuint *)0);
