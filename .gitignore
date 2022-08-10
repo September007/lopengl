@@ -3,6 +3,6 @@
 /bin
 /lib/
 .vs/
-
+/.vscode/
 
 **.zip
