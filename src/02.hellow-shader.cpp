@@ -39,14 +39,14 @@ int main()
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+
     // shader && program
-    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/01.hellow-triangle/this.vs.glsl")};
-    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/01.hellow-triangle/this.fs.glsl")};
+    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/02.hellow-shader/this.vs.glsl")};
+    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/02.hellow-shader/this.fs.glsl")};
     // return GL_TRUE , which is 1
     GLint shaderCompileStatus[] = {vs.getInfo(GL_COMPILE_STATUS), fs.getInfo(GL_COMPILE_STATUS)};
     ProgramObject program = Helper::CreateProgram(vs, fs);
-    GLint programCompileStatus = program.getInfo(GL_COMPILE_STATUS);
-
+   
     GLfloat vertices[] = {
         -0.5f, -0.5f, 0.0f,   1.f, 0.f, 0.f,       // left bottom
         0.5f, -0.5f, 0.0f,   .0f, 1.f, 0.f,       // right bottom
@@ -84,9 +84,15 @@ int main()
         glClearColor(0.2, .2, .3, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(program.getProgram());
         double tm = glfwGetTime();
         int itm=tm;
+
+        GLfloat offset[]={sinf(tm)/4,cosf(tm)/4,0,0};
+        glUseProgram(program.getProgram());
+
+        auto uniforms=program.getUniforms();
+        glUniform4f(program.getUniformLocation("offset"),sinf(tm)/4,cosf(tm)/4,0,0);
+
         glBindVertexArray(VAO);
         if (itm & 2)
             glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);

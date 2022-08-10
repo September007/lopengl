@@ -5,12 +5,16 @@
 #include <set>
 #include <sstream>
 #include <vector>
-inline auto readFile(std::string f) -> std::string
+#define STRICT_ true
+
+template <bool strict_ = STRICT_>
+inline auto readFile(const std::string &f) -> std::string
 {
-    try{
+    try
+    {
         //  system("dir");
         std::ifstream fin;
-        fin.exceptions(std::ifstream::failbit|std::ifstream::badbit);
+        fin.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         fin.open(f);
         std::stringstream ss;
         ss << fin.rdbuf();
@@ -20,7 +24,10 @@ inline auto readFile(std::string f) -> std::string
     catch (std::exception &e)
     {
         std::cout << e.what() << std::endl;
-        throw;
+        if constexpr (strict_)
+            throw;
+        else
+            return "";
     }
 }
 
@@ -64,7 +71,7 @@ inline auto getAttributes(GLint program)
 // ret==0: success
 // ret&1: checkAttributesExistence failed
 // ret&2: checkPositionCorrectness failed
-template <bool checkAttributesExistence = true, bool checkPositionCorrectness = true>
+template <bool checkAttributesExistence = STRICT_, bool checkPositionCorrectness = STRICT_>
 inline int bindAttributesLocations(GLint program, std::vector<std::pair<std::string, GLint>> const &lcos)
 {
     int ret = 0;
@@ -88,7 +95,7 @@ inline int bindAttributesLocations(GLint program, std::vector<std::pair<std::str
     glLinkProgram(program);
     return ret;
 }
-template<bool strict_=true>
+template <bool strict_ = STRICT_>
 struct ShaderObject
 {
     std::shared_ptr<GLint> shaderHandler = nullptr;
@@ -108,15 +115,18 @@ struct ShaderObject
         glCompileShader(*shaderHandler);
         int success;
         // 获取编译信息
+        int len;
         char infoLog[512];
         glGetShaderiv(*shaderHandler, GL_COMPILE_STATUS, &success);
         if (!success)
-           {
-                tempInfo = infoLog;
-                if constexpr(strict_){
-                    throw std::runtime_error("shader compile failed:\n\t"+tempInfo);
-                }
-           }
+        {
+            glGetShaderInfoLog(*shaderHandler, 512, &len, infoLog);
+            tempInfo = {infoLog, infoLog + len};
+            if constexpr (strict_)
+            {
+                throw std::runtime_error("shader compile failed:\n\t" + tempInfo);
+            }
+        }
     }
     auto Attach(GLint targetProgram) const -> void
     {
@@ -135,8 +145,14 @@ struct ShaderObject
     }
 };
 
-using GLHandle = std::shared_ptr<GLint>; 
-template<bool strict_=true>
+// pre declaration
+namespace Helper
+{
+    template <typename... MultiShaderObj>
+    inline GLint CreateProgram(MultiShaderObj... mso);
+}
+using GLHandle = std::shared_ptr<GLint>;
+template <bool strict_ = STRICT_>
 struct ProgramObject
 {
     GLHandle program = nullptr;
@@ -146,15 +162,20 @@ struct ProgramObject
     {
         reset(program);
     }
+    ProgramObject(const std::string &vsFileName, const std::string &fsFileName)
+    {
+        reset(Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(vsFileName)), ShaderObject(GL_FRAGMENT_SHADER, readFile(fsFileName))));
+    }
     void reset(GLint program)
     {
         this->program.reset(new GLint(program), [](GLint *p)
                             { glDeleteProgram(*p); });
-        //check program link status
-        auto ret=getInfo(GL_LINK_STATUS);
-        if constexpr(strict_)
-            if(ret!=GL_TRUE){
-                    throw std::runtime_error("program link failed:\n\t"+tempInfo);
+        // check program link status
+        auto ret = getInfo(GL_LINK_STATUS);
+        if constexpr (strict_)
+            if (ret != GL_TRUE)
+            {
+                throw std::runtime_error("program link failed:\n\t" + tempInfo);
             }
     }
     auto getProgram() { return *program; }
@@ -169,6 +190,45 @@ struct ProgramObject
         tempInfo = {temp, temp + len};
         return params;
     }
+    auto getAttributes()
+    {
+        return ::getAttributes(getProgram());
+    }
+    auto getUniforms()
+    {
+        std::map<std::string, AttributeInfo> ret;
+        int count = 0;
+        glGetProgramiv(getProgram(), GL_ACTIVE_UNIFORMS, &count);
+        constexpr int name_length = 256;
+        char cache_name[name_length];
+        GLint used_cache_name_length = 0;
+        for (int i = 0; i < count; ++i)
+        {
+            AttributeInfo info;
+            glGetActiveUniform(getProgram(), GLint(i), name_length, &used_cache_name_length, &info.size, &info.type, cache_name);
+            info.name = std::string(cache_name, cache_name + used_cache_name_length);
+            info.position = glGetUniformLocation(getProgram(), info.name.c_str());
+            ret[info.name] = info;
+        }
+        return ret;
+    }
+    // uniform setter
+    void setBool(const std::string &name, bool value) const
+    {
+        glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), (int)value);
+    }
+    void setInt(const std::string &name, int value) const
+    {
+        glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), value);
+    }
+    void setFloat(const std::string &name, float value) const
+    {
+        glUniform1f(glGetUniformLocation(getProgram(), name.c_str()), value);
+    }
+    int getUniformLocation(const std::string &name)
+    {
+        return glGetUniformLocation(getProgram(), name.c_str());
+    }
 };
 
 namespace
@@ -176,7 +236,7 @@ namespace
     template <bool isBegin, typename FirstShader, typename... RestShaders>
     GLint _CreateProgram(GLint program, FirstShader fs, RestShaders... rest)
     {
-        static_assert(std::is_same_v<FirstShader, ShaderObject<>>,  "只接受ShaderObject类型参数");
+        static_assert(std::is_same_v<FirstShader, ShaderObject<>>, "只接受ShaderObject类型参数");
 
         if constexpr (isBegin)
         {
