@@ -6,6 +6,8 @@
 #include <sstream>
 #include <vector>
 
+#define STRICT_ true
+
 template <bool strict_ = STRICT_>
 inline auto readFile(const std::string &f) -> std::string
 {
@@ -65,6 +67,13 @@ inline auto getAttributes(GLint program)
         ret[info.name] = info;
     }
     return ret;
+}
+
+inline int error;
+#define GL_ERROR_STOP() {\
+    error=glGetError();\
+    if(error!=0)            \
+        throw std::runtime_error("gl get error");\
 }
 // \ret
 // ret==0: success
@@ -177,7 +186,7 @@ struct ProgramObject
                 throw std::runtime_error("program link failed:\n\t" + tempInfo);
             }
     }
-    auto getProgram() { return *program; }
+    auto getProgram()const { return *program; }
     auto getInfo(GLenum pname)
     {
         constexpr int tempLength = 1024;
