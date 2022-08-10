@@ -45,6 +45,9 @@ set(COMMON_LIBS ${COMMON_LIBS} ${EXTRA_LIBS})
 
 set(RUN_DIR ${PROJECT_SOURCE_DIR}/bin)
 
+
+# preprocessor
+add_compile_definitions(STRICT_=true)
 # find_package(OpenMP)
 
 # if(OPENMP_FOUND)

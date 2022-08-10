@@ -5,7 +5,6 @@
 #include <set>
 #include <sstream>
 #include <vector>
-#define STRICT_ true
 
 template <bool strict_ = STRICT_>
 inline auto readFile(const std::string &f) -> std::string
