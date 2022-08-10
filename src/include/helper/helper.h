@@ -7,12 +7,21 @@
 #include <vector>
 inline auto readFile(std::string f) -> std::string
 {
-    //  system("dir");
-    std::ifstream fin(f);
-    std::stringstream ss;
-    ss << fin.rdbuf();
-    auto ret = ss.str();
-    return ret;
+    try{
+        //  system("dir");
+        std::ifstream fin;
+        fin.exceptions(std::ifstream::failbit|std::ifstream::badbit);
+        fin.open(f);
+        std::stringstream ss;
+        ss << fin.rdbuf();
+        auto ret = ss.str();
+        return ret;
+    }
+    catch (std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        throw;
+    }
 }
 
 inline std::string getShaderInfoLog(GLint program, GLint shader)
@@ -79,12 +88,12 @@ inline int bindAttributesLocations(GLint program, std::vector<std::pair<std::str
     glLinkProgram(program);
     return ret;
 }
-
+template<bool strict_=true>
 struct ShaderObject
 {
     std::shared_ptr<GLint> shaderHandler = nullptr;
-    //±£´æÉÏÒ»´Î»ñÈ¡µÄ×´Ì¬ĞÅÏ¢£¬¹¹Ôìº¯Êı³õÊ¼»¯Ö®ºó±£´æµÄÊÇ±àÒëĞÅÏ¢
-    std::string  tempInfo;
+    //ä¿å­˜ä¸Šä¸€æ¬¡è·å–çš„çŠ¶æ€ä¿¡æ¯ï¼Œæ„é€ å‡½æ•°åˆå§‹åŒ–ä¹‹åä¿å­˜çš„æ˜¯ç¼–è¯‘ä¿¡æ¯
+    std::string tempInfo;
     ShaderObject(GLint shader_type, std::string src)
     {
         shaderHandler = std::shared_ptr<GLint>(new GLint(glCreateShader(shader_type)),
@@ -98,35 +107,41 @@ struct ShaderObject
         glShaderSource(*shaderHandler, 1, srcs, NULL);
         glCompileShader(*shaderHandler);
         int success;
-        // »ñÈ¡±àÒëĞÅÏ¢
+        // è·å–ç¼–è¯‘ä¿¡æ¯
         char infoLog[512];
         glGetShaderiv(*shaderHandler, GL_COMPILE_STATUS, &success);
         if (!success)
-             tempInfo = infoLog;
+           {
+                tempInfo = infoLog;
+                if constexpr(strict_){
+                    throw std::runtime_error("shader compile failed:\n\t"+tempInfo);
+                }
+           }
     }
     auto Attach(GLint targetProgram) const -> void
     {
         return glAttachShader(targetProgram, *shaderHandler);
     }
-    auto getInfo(GLenum pname){
-        constexpr int tempLength=1024;
+    auto getInfo(GLenum pname)
+    {
+        constexpr int tempLength = 1024;
         char temp[tempLength];
-        GLint params=GL_FALSE;
-        glGetShaderiv(*shaderHandler,pname,&params);
+        GLint params = GL_FALSE;
+        glGetShaderiv(*shaderHandler, pname, &params);
         GLsizei len;
-        glGetShaderInfoLog(*shaderHandler,tempLength,&len,temp);
-        tempInfo={temp,temp+len};
+        glGetShaderInfoLog(*shaderHandler, tempLength, &len, temp);
+        tempInfo = {temp, temp + len};
         return params;
     }
-    
 };
 
-using GLHandle = std::shared_ptr<GLint>;
+using GLHandle = std::shared_ptr<GLint>; 
+template<bool strict_=true>
 struct ProgramObject
 {
     GLHandle program = nullptr;
-    //±£´æÉÏÒ»´Î»ñÈ¡µÄ×´Ì¬ĞÅÏ¢
-    std::string  tempInfo;
+    //ä¿å­˜ä¸Šä¸€æ¬¡è·å–çš„çŠ¶æ€ä¿¡æ¯
+    std::string tempInfo;
     ProgramObject(GLint program = 0)
     {
         reset(program);
@@ -135,16 +150,23 @@ struct ProgramObject
     {
         this->program.reset(new GLint(program), [](GLint *p)
                             { glDeleteProgram(*p); });
+        //check program link status
+        auto ret=getInfo(GL_LINK_STATUS);
+        if constexpr(strict_)
+            if(ret!=GL_TRUE){
+                    throw std::runtime_error("program link failed:\n\t"+tempInfo);
+            }
     }
     auto getProgram() { return *program; }
-    auto getInfo(GLenum pname){
-        constexpr int tempLength=1024;
+    auto getInfo(GLenum pname)
+    {
+        constexpr int tempLength = 1024;
         char temp[tempLength];
-        GLint params=GL_FALSE;
-        glGetProgramiv(getProgram(),pname,&params);
+        GLint params = GL_FALSE;
+        glGetProgramiv(getProgram(), pname, &params);
         GLsizei len;
-        glGetProgramInfoLog(getProgram(),tempLength,&len,temp);
-        tempInfo={temp,temp+len};
+        glGetProgramInfoLog(getProgram(), tempLength, &len, temp);
+        tempInfo = {temp, temp + len};
         return params;
     }
 };
@@ -154,7 +176,7 @@ namespace
     template <bool isBegin, typename FirstShader, typename... RestShaders>
     GLint _CreateProgram(GLint program, FirstShader fs, RestShaders... rest)
     {
-        static_assert(std::is_same_v<FirstShader, ShaderObject>, "Ö»½ÓÊÜShaderObjectÀàĞÍ²ÎÊı");
+        static_assert(std::is_same_v<FirstShader, ShaderObject<>>,  "åªæ¥å—ShaderObjectç±»å‹å‚æ•°");
 
         if constexpr (isBegin)
         {
