@@ -47,42 +47,35 @@ int main()
     GLint programCompileStatus = program.getInfo(GL_COMPILE_STATUS);
 
     GLfloat vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f};
-    // VBO
-    GLuint VBO, VAO;
+        -0.5f, -0.5f, 0.0f, // left bottom
+        0.5f, -0.5f, 0.0f,  // right bottom
+        0.5f, 0.5f, 0.0f,   // right top
+        -0.5f, 0.5f, 0.0f   // left top
+    };
 
+    GLuint indices[] = {
+        0, 1, 2, // triangle one
+        1, 2, 3  // triangle two
+    };
+    GLuint VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-
+    glGenBuffers(1, &EBO);
     // 1. 绑定VAO
     glBindVertexArray(VAO);
-    // 2. 把顶点数组复制到缓冲中供OpenGL使用
+    // 2. 把顶点数组复制到缓冲中供OpenGL使用 //
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // 3. 设置顶点属性指针
+    // 3. 设置顶点属性指针 //
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
-
+    // 4. 绑定 EBO //
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     GLfloat vertices1[] = {
         -0.5f, 0.5f, 0.0f,
         0.5f, 0.5f, 0.0f,
         0.0f, -0.5f, 0.0f};
-    // VBO
-    GLuint VBO1, VAO1;
-
-    glGenVertexArrays(1, &VAO1);
-    glGenBuffers(1, &VBO1);
-
-    // 1. 绑定VAO
-    glBindVertexArray(VAO1);
-    // 2. 把顶点数组复制到缓冲中供OpenGL使用
-    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices1, GL_STATIC_DRAW);
-    // 3. 设置顶点属性指针
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -93,11 +86,11 @@ int main()
 
         glUseProgram(program.getProgram());
         int tm = glfwGetTime();
-        if ((tm / 3) & 1)
-            glBindVertexArray(VAO);
+        glBindVertexArray(VAO);
+        if (tm & 2)
+            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         else
-            glBindVertexArray(VAO1);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 3 + (GLuint *)0);
 
         glfwSwapBuffers(window);
     }
