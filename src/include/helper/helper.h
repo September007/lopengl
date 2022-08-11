@@ -6,6 +6,10 @@
 #include <sstream>
 #include <vector>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #define STRICT_ true
 
 template <bool strict_ = STRICT_>
@@ -275,3 +279,18 @@ namespace Helper
     }
 
 } // namespace Helper
+
+template <int dim, typename T, glm::qualifier Q>
+inline auto to_string(glm::vec<dim, typename T, Q> const &v)
+{
+    std::string ret;
+    if constexpr (dim > 0)
+        ret += std::to_string(v.x)+' ';
+    if constexpr (dim > 1)
+        ret += std::to_string(v.y)+' ';
+    if constexpr (dim > 2)
+        ret += std::to_string(v.z)+' ';
+    if constexpr (dim > 3)
+        ret += std::to_string(v.w)+' ';
+    return ret;
+}
