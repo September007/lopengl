@@ -5,6 +5,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <helper/stb_image.h>
 #include <map>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -42,8 +46,8 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // shader && program
-    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/03.hellow-texture/this.vs.glsl")};
-    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/03.hellow-texture/this.fs.glsl")};
+    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/04.hellow-transform/this.vs.glsl")};
+    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/04.hellow-transform/this.fs.glsl")};
     // return GL_TRUE , which is 1
     GLint shaderCompileStatus[] = {vs.getInfo(GL_COMPILE_STATUS), fs.getInfo(GL_COMPILE_STATUS)};
     ProgramObject program = Helper::CreateProgram(vs, fs);
@@ -70,36 +74,36 @@ int main()
 
     GLuint texture2;
     glActiveTexture(GL_TEXTURE1);
-    glGenTextures(1,&texture2);
-    glBindTexture(GL_TEXTURE_2D,texture2);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-    
-    int width2,height2,nChannels2;
-    auto data2=stbi_load("../media/texture/bmp/2004050204170.bmp",&width2,&height2,&nChannels2,0);
-    _ASSERT(data2!=nullptr);
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    int width2, height2, nChannels2;
+    auto data2 = stbi_load("../media/texture/bmp/2004050204170.bmp", &width2, &height2, &nChannels2, 0);
+    _ASSERT(data2 != nullptr);
     // see this strange format paramter,since GL_RGBA=GL_RGBA + 1, when nChannels get 4 , the value is equal to GL_RGBA
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGB+nChannels2-3,width2,height2,0,GL_RGB+nChannels2-3,GL_UNSIGNED_BYTE,data2);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels2 - 3, width2, height2, 0, GL_RGB + nChannels2 - 3, GL_UNSIGNED_BYTE, data2);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(data2);
 
     GL_ERROR_STOP();
-    constexpr auto IL=-1.f,IR=2.f;
-    constexpr auto VL=-0.2f,VR=0.2f;
+    constexpr auto IL = -1.f, IR = 2.f;
+    constexpr auto VL = -0.4f, VR = 0.4f;
     GLfloat vertices[] = {
         VL, VL, 0.0f, 1.f, 0.f, 0.f, IL, IL, // left bottom
-        VR, VL, 0.0f, .0f, 1.f, 0.f, IR, IL,  // right bottom
-        VR, VR, 0.0f, .0f, .0f, 1.f, IR, IR,   // right top
+        VR, VL, 0.0f, .0f, 1.f, 0.f, IR, IL, // right bottom
+        VR, VR, 0.0f, .0f, .0f, 1.f, IR, IR, // right top
         VL, VR, 0.0f, .5f, .5f, .5f, IL, IR, // left top
     };
 
     GLuint indices[] = {
-        0, 1, 2, // triangle one
-        0, 1, 3, // triangle two
-        0,1,2,3, // rectangle
+        0, 1, 2,    // triangle one
+        0, 1, 3,    // triangle two
+        0, 1, 2, 3, // rectangle
     };
     GLuint VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -116,7 +120,7 @@ int main()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof( GLfloat), 6 + (GLfloat *)0);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 6 + (GLfloat *)0);
     glEnableVertexAttribArray(2);
 
     // 4. 绑定 EBO //
@@ -127,16 +131,17 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    auto uniforms=program.getUniforms();
+    auto uniforms = program.getUniforms();
     GL_ERROR_STOP();
-    //the follow two all work
+    // the follow two all work
     glUseProgram(program.getProgram());
-   // glUniform1i(glGetUniformLocation(program.getProgram(),"ourTexture1"),0);
+    // glUniform1i(glGetUniformLocation(program.getProgram(),"ourTexture1"),0);
     GL_ERROR_STOP();
-    program.setInt("ourTexture2",1);
+    program.setInt("ourTexture2", 1);
     GL_ERROR_STOP();
-    std::map<int,int> frame_record;
-    frame_record[-1]=0;
+    std::map<int, int> frame_record;
+    frame_record[-1] = 0;
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -146,15 +151,20 @@ int main()
 
         double tm = glfwGetTime();
 
-        GLfloat offset[] = {sinf(tm) / 4, cosf(tm) / 4, 0, 0};
+        // transform
+        glm::mat4 trans = glm::rotate(glm::mat4(1.0f), glm::radians<float>(tm*1.5), glm::vec3(0, 0, 1));
+        trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
         glUseProgram(program.getProgram());
+        auto unifroms = program.getUniforms();
+        GL_ERROR_STOP();
 
-        auto uniforms = program.getUniforms();
-        glUniform4f(program.getUniformLocation("offset"), sinf(tm) / 4, cosf(tm) / 4, 0, 0);
+        program.setFloat("mixRate", sinf(tm) / 2 + 0.5);
+        glUniformMatrix4fv(uniforms["transform"].position, 1, GL_FALSE, glm::value_ptr(trans));
+        GL_ERROR_STOP();
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 6 + (GLuint *)0);
-        
+
         glfwSwapBuffers(window);
     }
     return 0;
