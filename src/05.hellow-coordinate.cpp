@@ -5,10 +5,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <helper/stb_image.h>
 #include <map>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+using namespace glm;
 
+constexpr int screenWidth = 800, screenHeight = 600;
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -29,7 +28,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    auto window = glfwCreateWindow(800, 600, "Learning OpenGL", NULL, NULL);
+    auto window = glfwCreateWindow(screenWidth, screenHeight, "Learning OpenGL", NULL, NULL);
     if (!window)
     {
         std::cout << "create widnow failed" << std::endl;
@@ -42,12 +41,12 @@ int main()
         std::cout << "glad load failed" << std::endl;
         return -1;
     }
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // shader && program
-    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/04.hellow-transform/this.vs.glsl")};
-    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/04.hellow-transform/this.fs.glsl")};
+    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/05.hellow-coordinate/this.vs.glsl")};
+    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/05.hellow-coordinate/this.fs.glsl")};
     // return GL_TRUE , which is 1
     GLint shaderCompileStatus[] = {vs.getInfo(GL_COMPILE_STATUS), fs.getInfo(GL_COMPILE_STATUS)};
     ProgramObject program = Helper::CreateProgram(vs, fs);
@@ -91,15 +90,52 @@ int main()
     stbi_image_free(data2);
 
     GL_ERROR_STOP();
-    constexpr auto IL = -1.f, IR = 2.f;
-    constexpr auto VL = -0.4f, VR = 0.4f;
-    GLfloat vertices[] = {
-        VL, VL, 0.0f, 1.f, 0.f, 0.f, IL, IL, // left bottom
-        VR, VL, 0.0f, .0f, 1.f, 0.f, IR, IL, // right bottom
-        VR, VR, 0.0f, .0f, .0f, 1.f, IR, IR, // right top
-        VL, VR, 0.0f, .5f, .5f, .5f, IL, IR, // left top
-    };
+    constexpr auto __L = -1.f, __R = 2.f;
+    constexpr auto _L = -0.5f, _R = 0.5f;
+    // position color
+   float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
     GLuint indices[] = {
         0, 1, 2,    // triangle one
         0, 1, 3,    // triangle two
@@ -116,13 +152,13 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     auto attribitues = getAttributes(program.getProgram());
     // 3. 设置顶点属性指针 //
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 6 + (GLfloat *)0);
-    glEnableVertexAttribArray(2);
-
+    _ASSERT(attribitues.find("aPos")!=attribitues.end());
+    _ASSERT(attribitues.find("aTexCoord")!=attribitues.end());
+    glVertexAttribPointer(attribitues["aPos"].position, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(attribitues["aPos"].position);
+    glVertexAttribPointer(attribitues["aTexCoord"].position, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(attribitues["aTexCoord"].position);
+   
     // 4. 绑定 EBO //
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -132,6 +168,7 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     auto uniforms = program.getUniforms();
+    auto attributes=program.getAttributes();
     GL_ERROR_STOP();
     // the follow two all work
     glUseProgram(program.getProgram());
@@ -149,22 +186,41 @@ int main()
         glClearColor(0.2, .2, .3, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUseProgram(program.getProgram());
         double tm = glfwGetTime();
 
-        // transform
-        glm::mat4 trans = glm::rotate(glm::mat4(1.0f), glm::radians<float>(tm*1.5), glm::vec3(0, 0, 1));
-        trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
-        glUseProgram(program.getProgram());
-        auto unifroms = program.getUniforms();
+        // coordinate transform
+        mat4 model = rotate<float>(mat4(1.f), tm*radians<float>(-55), vec3(0.5, 1.0, 0));
+        mat4 view = mat4(1.f);
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f,
+                                              -3 // sinf(tm)*2
+                                              ));
+        auto rate = float(screenWidth) / screenHeight;
+        mat4 projection = glm::perspective<float>(radians<float>(45), rate, .1, 100);
+        projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
         GL_ERROR_STOP();
-
         program.setFloat("mixRate", sinf(tm) / 2 + 0.5);
-        glUniformMatrix4fv(uniforms["transform"].position, 1, GL_FALSE, glm::value_ptr(trans));
+        int model_loc = program.getUniformLocation("model");
+        int view_loc = program.getUniformLocation("view");
+        int proj_loc = program.getUniformLocation("projection");
+        glUniformMatrix4fv(model_loc, 1, GL_FALSE, value_ptr(model));
+        glUniformMatrix4fv(view_loc, 1, GL_FALSE, value_ptr(view));
+        glUniformMatrix4fv(proj_loc, 1, GL_FALSE, value_ptr(projection));
         GL_ERROR_STOP();
-
+        {
+            vec4 vec(1.f, 1.f, 0, 1);
+            vec4 vecs[4] = {
+                projection * view * model * vec,
+                view * model * vec,
+                model * vec,
+                vec};
+            for (auto &v : vecs)
+                std::cout << to_string(v) << std::endl;
+            //_ASSERT(!ProjectionOutOfRange(vec,projection,view,model));
+        }
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 6 + (GLuint *)0);
-        
+        //glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 6 + (GLuint *)0);
+        glDrawArrays(GL_TRIANGLES,0,36);
         glfwSwapBuffers(window);
     }
     return 0;

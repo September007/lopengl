@@ -280,17 +280,70 @@ namespace Helper
 
 } // namespace Helper
 
+template <int index, int dim, typename T, glm::qualifier Q>
+_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q> &vec)
+{
+    static_assert(index < dim, "index out of range, what are you trying to do!!!");
+    if constexpr (index == 0)
+        return vec.x;
+    else if constexpr (index == 1)
+        return vec.y;
+    else if constexpr (index == 2)
+        return vec.z;
+    else if constexpr (index == 3)
+        return vec.w;
+}
+template <int index, int dim, typename T, glm::qualifier Q>
+_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q>const &vec)
+{
+    static_assert(index < dim, "index out of range, what are you trying to do!!!");
+    if constexpr (index == 0)
+        return vec.x;
+    else if constexpr (index == 1)
+        return vec.y;
+    else if constexpr (index == 2)
+        return vec.z;
+    else if constexpr (index == 3)
+        return vec.w;
+}
 template <int dim, typename T, glm::qualifier Q>
-inline auto to_string(glm::vec<dim, typename T, Q> const &v)
+inline auto to_string(typename glm::vec<dim, T, Q> const &v)
 {
     std::string ret;
     if constexpr (dim > 0)
-        ret += std::to_string(v.x)+' ';
+        ret += std::to_string(at<0>(v)) + ' ';
     if constexpr (dim > 1)
-        ret += std::to_string(v.y)+' ';
+        ret += std::to_string(at<1>(v)) + ' ';
     if constexpr (dim > 2)
-        ret += std::to_string(v.z)+' ';
+        ret += std::to_string(at<2>(v)) + ' ';
     if constexpr (dim > 3)
-        ret += std::to_string(v.w)+' ';
+        ret += std::to_string(at<3>(v)) + ' ';
     return ret;
+}
+
+template < int dim, typename T, glm::qualifier Q>
+_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q> &vec,int index)
+{
+    static_assert(index < dim, "index out of range, what are you trying to do!!!");
+    if  (index == 0)
+        return vec.x;
+    else if  (index == 1)
+        return vec.y;
+    else if  (index == 2)
+        return vec.z;
+    else if  (index == 3)
+        return vec.w;
+}
+// from left to right
+// if these transform matrix let
+template <typename... restMAT>
+inline int ProjectionOutOfRange(glm::vec4 c)
+{
+    return c.x > 1 || c.x < -1 || c.y > 1 || c.y < -1 || c.z > 1 || c.z < -1;
+}
+template <typename... restMAT>
+inline int ProjectionOutOfRange(glm::vec4 v, restMAT... rest)
+{
+    auto vv = (... * rest) * v;
+    return ProjectionOutOfRange(vv);
 }

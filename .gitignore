@@ -5,4 +5,5 @@
 .vs/
 /.vscode/
 temp.cpp
+temp
 extern/glew-2.1.0/glew.pc
