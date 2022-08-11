@@ -46,7 +46,6 @@ int main()
     // return GL_TRUE , which is 1
     GLint shaderCompileStatus[] = {vs.getInfo(GL_COMPILE_STATUS), fs.getInfo(GL_COMPILE_STATUS)};
     ProgramObject program = Helper::CreateProgram(vs, fs);
-
     // load texture
 
     GLuint texture;

@@ -13,5 +13,5 @@ void main(){
     mix(
         texture(ourTexture1,texCoord),
         texture(ourTexture2,texCoord),
-    (offset.x+offset.y)+0.5);
+    (offset.x*offset.y)*16+0.5);
 }
