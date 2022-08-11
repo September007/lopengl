@@ -90,52 +90,63 @@ int main()
     stbi_image_free(data2);
 
     GL_ERROR_STOP();
-    constexpr auto __L = -1.f, __R = 2.f;
-    constexpr auto _L = -0.5f, _R = 0.5f;
+    constexpr auto __L = -1.f, __R = 1.f;
+    constexpr auto _L = -0.3f, _R = 0.3f;
     // position color
-   float vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+      float vertices[] = {
+        _L, _L, _L, __L, __L,
+        _R, _L, _L, __R, __L,
+        _R, _R, _L, __R, __R,
+        _R, _R, _L, __R, __R,
+        _L, _R, _L, __L, __R,
+        _L, _L, _L, __L, __L,
 
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        _L, _L, _R, __L, __L,
+        _R, _L, _R, __R, __L,
+        _R, _R, _R, __R, __R,
+        _R, _R, _R, __R, __R,
+        _L, _R, _R, __L, __R,
+        _L, _L, _R, __L, __L,
 
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        _L, _R, _R, __R, __L,
+        _L, _R, _L, __R, __R,
+        _L, _L, _L, __L, __R,
+        _L, _L, _L, __L, __R,
+        _L, _L, _R, __L, __L,
+        _L, _R, _R, __R, __L,
 
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        _R, _R, _R, __R, __L,
+        _R, _R, _L, __R, __R,
+        _R, _L, _L, __L, __R,
+        _R, _L, _L, __L, __R,
+        _R, _L, _R, __L, __L,
+        _R, _R, _R, __R, __L,
 
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        _L, _L, _L, __L, __R,
+        _R, _L, _L, __R, __R,
+        _R, _L, _R, __R, __L,
+        _R, _L, _R, __R, __L,
+        _L, _L, _R, __L, __L,
+        _L, _L, _L, __L, __R,
 
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
+        _L, _R, _L, __L, __R,
+        _R, _R, _L, __R, __R,
+        _R, _R, _R, __R, __L,
+        _R, _R, _R, __R, __L,
+        _L, _R, _R, __L, __L,
+        _L, _R, _L, __L, __R};
+
+    glm::vec3 cubePositions[] = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)};
     GLuint indices[] = {
         0, 1, 2,    // triangle one
         0, 1, 3,    // triangle two
@@ -152,13 +163,13 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     auto attribitues = getAttributes(program.getProgram());
     // 3. 设置顶点属性指针 //
-    _ASSERT(attribitues.find("aPos")!=attribitues.end());
-    _ASSERT(attribitues.find("aTexCoord")!=attribitues.end());
+    _ASSERT(attribitues.find("aPos") != attribitues.end());
+    _ASSERT(attribitues.find("aTexCoord") != attribitues.end());
     glVertexAttribPointer(attribitues["aPos"].position, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(attribitues["aPos"].position);
     glVertexAttribPointer(attribitues["aTexCoord"].position, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(attribitues["aTexCoord"].position);
-   
+
     // 4. 绑定 EBO //
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -168,7 +179,7 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     auto uniforms = program.getUniforms();
-    auto attributes=program.getAttributes();
+    auto attributes = program.getAttributes();
     GL_ERROR_STOP();
     // the follow two all work
     glUseProgram(program.getProgram());
@@ -179,18 +190,21 @@ int main()
     std::map<int, int> frame_record;
     frame_record[-1] = 0;
 
+    // depth test
+    glEnable(GL_DEPTH_TEST);
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
         glfwPollEvents();
         glClearColor(0.2, .2, .3, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program.getProgram());
         double tm = glfwGetTime();
 
         // coordinate transform
-        mat4 model = rotate<float>(mat4(1.f), tm*radians<float>(-55), vec3(0.5, 1.0, 0));
+        // mat4 model = rotate<float>(mat4(1.f), tm*radians<float>(-55), vec3(0.5, 1.0, 0));
         mat4 view = mat4(1.f);
         view = glm::translate(view, glm::vec3(0.0f, 0.0f,
                                               -3 // sinf(tm)*2
@@ -200,27 +214,26 @@ int main()
         projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
         GL_ERROR_STOP();
         program.setFloat("mixRate", sinf(tm) / 2 + 0.5);
-        int model_loc = program.getUniformLocation("model");
+        // int model_loc = program.getUniformLocation("model");
         int view_loc = program.getUniformLocation("view");
         int proj_loc = program.getUniformLocation("projection");
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, value_ptr(model));
+        // glUniformMatrix4fv(model_loc, 1, GL_FALSE, value_ptr(model));
         glUniformMatrix4fv(view_loc, 1, GL_FALSE, value_ptr(view));
         glUniformMatrix4fv(proj_loc, 1, GL_FALSE, value_ptr(projection));
         GL_ERROR_STOP();
-        {
-            vec4 vec(1.f, 1.f, 0, 1);
-            vec4 vecs[4] = {
-                projection * view * model * vec,
-                view * model * vec,
-                model * vec,
-                vec};
-            for (auto &v : vecs)
-                std::cout << to_string(v) << std::endl;
-            //_ASSERT(!ProjectionOutOfRange(vec,projection,view,model));
-        }
+
         glBindVertexArray(VAO);
-        //glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 6 + (GLuint *)0);
-        glDrawArrays(GL_TRIANGLES,0,36);
+
+        glm::mat4 baseRotation=glm::rotate(glm::mat4(1.0f),glm::radians<float>(tm*19),glm::vec3(1.0,0,0));
+        for (int i = 0; i < 10; ++i)
+        {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), cubePositions[i]);
+            model=rotate<float>(model,glm::radians<float>(20.f*i),glm::vec3(1.0,0.3,0.5));
+            model=model*baseRotation;
+            glUniformMatrix4fv(program.getUniformLocation("model"), 1, GL_FALSE, value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
         glfwSwapBuffers(window);
     }
     return 0;
