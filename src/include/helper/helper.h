@@ -70,11 +70,12 @@ inline auto getAttributes(GLint program)
 }
 
 inline int error;
-#define GL_ERROR_STOP() {\
-    error=glGetError();\
-    if(error!=0)            \
-        throw std::runtime_error("gl get error");\
-}
+#define GL_ERROR_STOP()                               \
+    {                                                 \
+        error = glGetError();                         \
+        if (error != 0)                               \
+            throw std::runtime_error("gl get error"); \
+    }
 // \ret
 // ret==0: success
 // ret&1: checkAttributesExistence failed
@@ -107,7 +108,7 @@ template <bool strict_ = STRICT_>
 struct ShaderObject
 {
     std::shared_ptr<GLint> shaderHandler = nullptr;
-    //保存上一次获取的状态信息，构造函数初始化之后保存的是编译信息
+    // save state info which queried last time, the construction func would set this as compile info
     std::string tempInfo;
     ShaderObject(GLint shader_type, std::string src)
     {
@@ -122,7 +123,7 @@ struct ShaderObject
         glShaderSource(*shaderHandler, 1, srcs, NULL);
         glCompileShader(*shaderHandler);
         int success;
-        // 获取编译信息
+        // get compile info
         int len;
         char infoLog[512];
         glGetShaderiv(*shaderHandler, GL_COMPILE_STATUS, &success);
@@ -164,7 +165,7 @@ template <bool strict_ = STRICT_>
 struct ProgramObject
 {
     GLHandle program = nullptr;
-    //保存上一次获取的状态信息
+    // save state info recently queried
     std::string tempInfo;
     ProgramObject(GLint program = 0)
     {
@@ -182,11 +183,9 @@ struct ProgramObject
         auto ret = getInfo(GL_LINK_STATUS);
         if constexpr (strict_)
             if (ret != GL_TRUE)
-            {
                 throw std::runtime_error("program link failed:\n\t" + tempInfo);
-            }
     }
-    auto getProgram()const { return *program; }
+    GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
     {
         constexpr int tempLength = 1024;
