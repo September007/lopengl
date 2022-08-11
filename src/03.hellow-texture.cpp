@@ -4,6 +4,7 @@
 #include <helper/helper.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <helper/stb_image.h>
+#include <map>
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -71,8 +72,8 @@ int main()
     glActiveTexture(GL_TEXTURE1);
     glGenTextures(1,&texture2);
     glBindTexture(GL_TEXTURE_2D,texture2);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     
@@ -86,12 +87,12 @@ int main()
     stbi_image_free(data2);
 
     GL_ERROR_STOP();
-    constexpr 
+    constexpr auto IL=-1.f,IR=2.f;
     GLfloat vertices[] = {
-        -0.5f, -0.5f, 0.0f, 1.f, 0.f, 0.f, 0.f, 0.f, // left bottom
-        0.5f, -0.5f, 0.0f, .0f, 1.f, 0.f, 1.f, 0.f,  // right bottom
-        0.5f, 0.5f, 0.0f, .0f, .0f, 1.f, 1.f, 1.f,   // right top
-        -0.5f, 0.5f, 0.0f, .5f, .5f, .5f, 0.f, 1.f, // left top
+        -0.5f, -0.5f, 0.0f, 1.f, 0.f, 0.f, IL, IL, // left bottom
+        0.5f, -0.5f, 0.0f, .0f, 1.f, 0.f, IR, IL,  // right bottom
+        0.5f, 0.5f, 0.0f, .0f, .0f, 1.f, IR, IR,   // right top
+        -0.5f, 0.5f, 0.0f, .5f, .5f, .5f, IL, IR, // left top
     };
 
     GLuint indices[] = {
@@ -133,7 +134,8 @@ int main()
     GL_ERROR_STOP();
     program.setInt("ourTexture2",1);
     GL_ERROR_STOP();
-
+    std::map<int,int> frame_record;
+    frame_record[-1]=0;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -151,7 +153,7 @@ int main()
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 6 + (GLuint *)0);
-
+        
         glfwSwapBuffers(window);
     }
     return 0;
