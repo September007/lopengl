@@ -1,8 +1,8 @@
 
-build/
-bin/
-lib/
+/build/
+/bin
+/lib/
 .vs/
-
+/.vscode/
 temp.cpp
 

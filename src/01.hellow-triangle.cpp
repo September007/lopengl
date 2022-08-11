@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <helper/helper.h>
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -46,55 +47,49 @@ int main()
     ProgramObject program = Helper::CreateProgram(vs, fs);
     GLint programCompileStatus = program.getInfo(GL_COMPILE_STATUS);
 
-       float vertices[] = {
-        -0.5f, -0.5f, 0.0f, // left  
-         0.5f, -0.5f, 0.0f, // right 
-         0.0f,  0.5f, 0.0f  // top   
-    }; 
+    GLfloat vertices[] = {
+        -0.5f, -0.5f, 0.0f, // left bottom
+        0.5f, -0.5f, 0.0f,  // right bottom
+        0.5f, 0.5f, 0.0f,   // right top
+        -0.5f, 0.5f, 0.0f   // left top
+    };
 
-    unsigned int VBO, VAO;
+    GLuint indices[] = {
+        0, 1, 2, // triangle one
+        1, 2, 3  // triangle two
+    };
+    GLuint VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glGenBuffers(1, &EBO);
+    // 1. 绑定VAO
     glBindVertexArray(VAO);
-
+    // 2. 把顶点数组复制到缓冲中供OpenGL使用 //
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // 3. 设置顶点属性指针 //
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+    GLfloat vertices1[] = {
+        -0.5f, 0.5f, 0.0f,
+        0.5f, 0.5f, 0.0f,
+        0.0f, -0.5f, 0.0f};
+    // VBO
+    GLuint VBO1, VAO1;
 
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
-
-    float vertices1[] = {
-        -0.5f, 0.5f, 0.0f, // left  
-         0.5f, 0.5f, 0.0f, // right 
-         0.0f,  -0.5f, 0.0f  // top   
-    }; 
-
-    unsigned int VBO1, VAO1;
     glGenVertexArrays(1, &VAO1);
     glGenBuffers(1, &VBO1);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+
+    // 1. 绑定VAO
     glBindVertexArray(VAO1);
-
+    // 2. 把顶点数组复制到缓冲中供OpenGL使用
     glBindBuffer(GL_ARRAY_BUFFER, VBO1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices1, GL_STATIC_DRAW);
+    // 3. 设置顶点属性指针
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -103,12 +98,17 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(program.getProgram());
-        int tm = glfwGetTime();
-        if ((tm / 3) & 1)
-            glBindVertexArray(VAO1);
+        double tm = glfwGetTime();
+        int itm=tm;
+        glBindVertexArray(VAO);
+        GLfloat greenValue=GLfloat(sin(tm))*0.5+0.5;
+        
+        int uniform_color_location=glGetUniformLocation(program.getProgram(),"uniform_color");
+        glUniform4f(uniform_color_location,0,greenValue,0,1);
+        if (itm & 2)
+            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         else
-            glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 3 + (GLuint *)0);
 
         glfwSwapBuffers(window);
     }
