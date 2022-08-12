@@ -5,20 +5,89 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <helper/stb_image.h>
 #include <map>
-using namespace glm;
+
+using glm::mat4;
+using glm::min;
+using glm::radians;
+using glm::rotate;
+using glm::vec3;
 
 constexpr int screenWidth = 800, screenHeight = 600;
+// camera variables, application like 'glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);'
+glm::vec3 cameraPos = vec3(0, 0, 3);
+glm::vec3 cameraFront = vec3(0, 0, -1);
+glm::vec3 cameraUp = vec3(0, 1, 0);
+
+float cameraSpeed = 0.5;
+// direction && mouse input
+float pitch = 0;
+float yaw = -90;
+float roll = 0;
+float lastX = screenWidth / 2, lastY = screenHeight / 2;
+// the duration between last two frame, in seconds, this will be set in render loop
+float deltaTime = 0;
+float lastFrameTime = 0;
+
+float fov = 40;
+// this is for debuging pause balahbalh to clip deltaTime to a normal value
+float constexpr deltaTimeClipMax = 0.05;
+void mouseCallback(GLFWwindow *window, double xpos, double ypos)
+{
+    static bool first = true;
+    auto offsetX = xpos - lastX;
+    auto offsetY = ypos - lastY; // reversed since y-coordinates go from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+    if (first)
+    {
+        first = false;
+        return;
+    }
+
+    float sensitivity = 0.05;
+    offsetX *= sensitivity;
+    offsetY *= sensitivity;
+
+    yaw += offsetX;
+    pitch += offsetY;
+    // pitch=clamp(pitch,-89,89);
+    auto cp = cos(glm::radians<float>(::pitch));
+    auto cy = cos(glm::radians<float>(::yaw));
+    glm::vec3 front;
+    front.x = cos(glm::radians<float>(::pitch)) * cos(glm::radians<float>(::yaw));
+    front.y = sin(glm::radians<float>(::pitch));
+    front.z = cos(glm::radians<float>(::pitch)) * sin(glm::radians<float>(::yaw));
+
+    auto nf = glm::normalize(front);
+    cameraFront = nf;
+}
+void scrollCallback(GLFWwindow *window, double offsetX, double offsetY)
+{
+    if (fov >= 1.0 && fov <= 45)
+        fov += offsetY;
+    fov = clamp(fov, 1, 45);
+}
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
-
 void processInput(GLFWwindow *window)
 {
+    auto speed = cameraSpeed * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
         glfwSetWindowShouldClose(window, true);
-    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraFront * speed;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraFront * speed;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(cross(cameraFront, cameraUp)) * speed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(cross(cameraFront, cameraUp)) * speed;
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        cameraSpeed -= deltaTime * 1;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        cameraSpeed += deltaTime * 1;
 }
 int main()
 {
@@ -36,6 +105,7 @@ int main()
         glfwTerminate();
         return -1;
     }
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(window);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -44,7 +114,8 @@ int main()
     }
     glViewport(0, 0, screenWidth, screenHeight);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
+    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetScrollCallback(window, scrollCallback);
     // shader && program
     ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.vs.glsl")};
     ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.fs.glsl")};
@@ -196,46 +267,29 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        double tm = glfwGetTime();
+        deltaTime = min<float>(deltaTimeClipMax, tm - lastFrameTime);
+        lastFrameTime = tm;
         processInput(window);
         glfwPollEvents();
         glClearColor(0.2, .2, .3, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program.getProgram());
-        double tm = glfwGetTime();
-
         // coordinate transform
-        // mat4 model = rotate<float>(mat4(1.f), tm*radians<float>(-55), vec3(0.5, 1.0, 0));
-        
-    {// what glm::LookAt will do, see we are obliged to provide the cameraPos;cameraTarget;up 
-        // camera
-        glm::vec3 cameraPos = glm::vec3(0, 0, 3);
-        glm::vec3 cameraTarget = vec3(0, 0, 0);
-        // z-axis of camera
-        glm::vec3 cameraDirection = -(cameraTarget - cameraPos);
-        // temporary up-axis, by cross this with Z-Axis:cameraDirection, we got a truly right:X:CameraRight,then cross Z with X ,we got Y
-        // the temorary up; truly Y;truly Z is in a
-        glm::vec3 up = glm::vec3(0, 1, 0);
-        // x-axis
-        glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-        // Y-axis
-        glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
-    }
-        float radian=10.f;
-        float cameraPosX=sin(tm)*radian,cameraPosY=cos(tm)*radian;
-        mat4 view = glm::lookAt(vec3(cameraPosX,cameraPosY,3),vec3(0,0,0),vec3(0,1,0));
+        mat4 model = rotate<float>(mat4(1.f), tm * radians<float>(-55), vec3(0.5, 1.0, 0));
+        mat4 view = glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);
         view = glm::translate(view, glm::vec3(0.0f, 0.0f,
                                               -3 // sinf(tm)*2
                                               ));
         auto rate = float(screenWidth) / screenHeight;
-        mat4 projection = glm::perspective<float>(radians<float>(45), rate, .1, 100);
-        projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+        auto projection = glm::perspective(glm::radians(fov), (float)width / (float)height, 0.1f, 100.0f);
         GL_ERROR_STOP();
         program.setFloat("mixRate", sinf(tm) / 2 + 0.5);
-        // int model_loc = program.getUniformLocation("model");
+        int model_loc = program.getUniformLocation("model");
         int view_loc = program.getUniformLocation("view");
         int proj_loc = program.getUniformLocation("projection");
-        // glUniformMatrix4fv(model_loc, 1, GL_FALSE, value_ptr(model));
+        glUniformMatrix4fv(model_loc, 1, GL_FALSE, value_ptr(model));
         glUniformMatrix4fv(view_loc, 1, GL_FALSE, value_ptr(view));
         glUniformMatrix4fv(proj_loc, 1, GL_FALSE, value_ptr(projection));
         GL_ERROR_STOP();

@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
+#include <type_traits>
 #define STRICT_ true
 
 template <bool strict_ = STRICT_>
@@ -294,7 +295,7 @@ _CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q> &vec)
         return vec.w;
 }
 template <int index, int dim, typename T, glm::qualifier Q>
-_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q>const &vec)
+_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q> const &vec)
 {
     static_assert(index < dim, "index out of range, what are you trying to do!!!");
     if constexpr (index == 0)
@@ -321,17 +322,17 @@ inline auto to_string(typename glm::vec<dim, T, Q> const &v)
     return ret;
 }
 
-template < int dim, typename T, glm::qualifier Q>
-_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q> &vec,int index)
+template <int dim, typename T, glm::qualifier Q>
+_CONSTEVAL inline auto &at(typename glm::vec<dim, T, Q> &vec, int index)
 {
     static_assert(index < dim, "index out of range, what are you trying to do!!!");
-    if  (index == 0)
+    if (index == 0)
         return vec.x;
-    else if  (index == 1)
+    else if (index == 1)
         return vec.y;
-    else if  (index == 2)
+    else if (index == 2)
         return vec.z;
-    else if  (index == 3)
+    else if (index == 3)
         return vec.w;
 }
 // from left to right
@@ -348,10 +349,21 @@ inline int ProjectionOutOfRange(glm::vec4 v, restMAT... rest)
     return ProjectionOutOfRange(vv);
 }
 
-//no postfix!!!
-inline  auto getSrcFileNameOnlyName(std::string const & fullName){
-    std::filesystem::path path=fullName;
-    auto filename=path.filename().string();
-    auto dotPos=filename.find_last_of('.');
-    return filename.substr(0,dotPos);
+// no postfix!!!
+inline auto getSrcFileNameOnlyName(std::string const &fullName)
+{
+    std::filesystem::path path = fullName;
+    auto filename = path.filename().string();
+    auto dotPos = filename.find_last_of('.');
+    return filename.substr(0, dotPos);
+}
+template <typename T, typename T1 = T, typename T2 = T>
+inline auto clamp(T val, T1 minVal, T2 maxVal) -> T
+{
+    static_assert(std::is_convertible_v<T1, T> && std::is_convertible_v<T2, T>, "T1 or T2 is not convertable to T");
+    if (val < minVal)
+        return minVal;
+    if (val > maxVal)
+        return maxVal;
+    return val;
 }
