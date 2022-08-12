@@ -36,7 +36,12 @@ inline auto readFile(const std::string &f) -> std::string
             return "";
     }
 }
-
+inline auto writeFile(const std::string &fName,const std::string &data){
+    std::ofstream out(fName);
+    out<<data;
+    out.close();
+    return out.good();
+}
 inline std::string getShaderInfoLog(GLint program, GLint shader)
 {
 
@@ -71,6 +76,14 @@ inline auto getAttributes(GLint program)
         info.position = glGetAttribLocation(program, info.name.c_str());
         ret[info.name] = info;
     }
+    return ret;
+}
+
+inline auto
+GetIntegerv(GLenum e)
+{
+    GLint ret;
+    glGetIntegerv(e,&ret);
     return ret;
 }
 
@@ -366,4 +379,17 @@ inline auto clamp(T val, T1 minVal, T2 maxVal) -> T
     if (val > maxVal)
         return maxVal;
     return val;
+}
+template<typename UNIT,typename TO>
+std::string toRGB(UNIT*data,int pixelLength){
+    std::string ret;
+    ret.resize(3*pixelLength*sizeof(TO));
+    for(int i=0;i<pixelLength;++i){
+        void *p=ret.data()+sizeof(TO)*i*3;
+        TO*pp=reinterpret_cast<TO*>( p);
+        pp[0]=data[i*3];
+        pp[1]=data[i*3+1];
+        pp[2]=data[i*3+2];
+    }
+    return ret;
 }
