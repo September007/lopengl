@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include <filesystem>
 #define STRICT_ true
 
 template <bool strict_ = STRICT_>
@@ -346,4 +346,12 @@ inline int ProjectionOutOfRange(glm::vec4 v, restMAT... rest)
 {
     auto vv = (... * rest) * v;
     return ProjectionOutOfRange(vv);
+}
+
+//no postfix!!!
+inline  auto getSrcFileNameOnlyName(std::string const & fullName){
+    std::filesystem::path path=fullName;
+    auto filename=path.filename().string();
+    auto dotPos=filename.find_last_of('.');
+    return filename.substr(0,dotPos);
 }
