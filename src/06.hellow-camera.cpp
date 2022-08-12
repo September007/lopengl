@@ -35,7 +35,7 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos)
 {
     static bool first = true;
     auto offsetX = xpos - lastX;
-    auto offsetY = ypos - lastY; // reversed since y-coordinates go from bottom to top
+    auto offsetY = lastY - ypos; // reversed since y-coordinates go from bottom to top
     lastX = xpos;
     lastY = ypos;
     if (first)
@@ -93,6 +93,8 @@ int main()
 {
     constexpr char *p = __FILE__;
     glfwInit();
+
+    glfwWindowHint(GL_SAMPLES, 8);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -262,9 +264,9 @@ int main()
     std::map<int, int> frame_record;
     frame_record[-1] = 0;
 
-    // depth test
+    // depth test && SSAA anti-aliasing
+    glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
-
     while (!glfwWindowShouldClose(window))
     {
         double tm = glfwGetTime();
