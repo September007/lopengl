@@ -50,28 +50,34 @@ set(RUN_DIR ${PROJECT_SOURCE_DIR}/bin)
 
 # find_package(OpenMP)
 
-# if(OPENMP_FOUND)
-#   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-# endif()
-aux_source_directory(./src lazy_srcs)
-set(EXAMPLES )
+
+file(GLOB_RECURSE lazy_srcs "src/**.cpp")
+
+#  point out programs from which chp need be generate
+set(ACTIVED_CHP ch03)
+set(EXES )
 foreach(src ${lazy_srcs})
     STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${src})
-    list(APPEND EXAMPLES ${FILE_NAME})
+    STRING(REGEX REPLACE ".*/(.+)/(.+)\\..*" "\\1" SUB_FOLDER ${src})
+    set_property(SOURCE ${FILE_NAME} PROPERTY srcFile ${src} )
+    set_property(SOURCE ${FILE_NAME} PROPERTY chpNo ${SUB_FOLDER} )
+    list(APPEND EXES ${FILE_NAME})
 endforeach(src ${lazy_srcs})
 
-
-
-foreach(EXAMPLE ${EXAMPLES})
-  add_executable(${EXAMPLE}  src/${EXAMPLE}.cpp "extern/glad/src/glad.c")
-  set_property(TARGET ${EXAMPLE} PROPERTY DEBUG_POSTFIX _d)
-  target_link_libraries(${EXAMPLE} ${COMMON_LIBS})
-
-  if(MSVC)
-    # configure_file(${PROJECT_SOURCE_DIR}/build/templates/vs2013.vcxproj.user.in ${CMAKE_CURRENT_BINARY_DIR}/${EXAMPLE}.vcxproj.user @ONLY)
-  endif(MSVC)
-endforeach(EXAMPLE)
+foreach( exe ${EXES})
+    get_property(srcFile SOURCE ${exe} PROPERTY srcFile)
+    get_property(chpNo SOURCE ${exe} PROPERTY chpNo)  
+    string(FIND "${ACTIVED_CHP}" ${chpNo} build_or_not )
+    if(${build_or_not} EQUAL -1)
+        continue()
+    endif()
+    add_executable(${exe} ${srcFile} "extern/glad/src/glad.c")
+    target_link_libraries(${exe} ${COMMON_LIBS})
+    if(MSVC)
+      # configure_file(${PROJECT_SOURCE_DIR}/build/templates/vs2013.vcxproj.user.in ${CMAKE_CURRENT_BINARY_DIR}/${EXAMPLE}.vcxproj.user @ONLY)
+    endif(MSVC)
+    
+endforeach()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LINUX -std=c++0x")
