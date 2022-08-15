@@ -393,3 +393,4 @@ std::string toRGB(UNIT*data,int pixelLength){
     }
     return ret;
 }
+

@@ -4,6 +4,8 @@
 #include <helper/helper.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <helper/stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <helper/stb_image_write.h>
 #include <map>
 
 using glm::mat4;
@@ -12,7 +14,7 @@ using glm::radians;
 using glm::rotate;
 using glm::vec3;
 
-constexpr int screenWidth = 20, screenHeight = 20;
+constexpr int screenWidth = 800, screenHeight = 600;
 // camera variables, application like 'glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);'
 glm::vec3 cameraPos = vec3(0, 0, 3);
 glm::vec3 cameraFront = vec3(0, 0, -1);
@@ -301,7 +303,7 @@ int main()
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
     _ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+   // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     GL_ERROR_STOP();
     auto ctex1 = GetIntegerv(GL_TEXTURE_BINDING_2D);
     while (!glfwWindowShouldClose(window))
@@ -347,11 +349,16 @@ int main()
 
         glfwSwapBuffers(window);
         auto data = new float[screenWidth * screenHeight * 3];
-        auto sw = screenWidth / 2, sh = screenHeight / 2;
-        glReadPixels(0,0, screenWidth,screenHeight, GL_RGB, GL_FLOAT, data);
-        auto strData = toRGB<float, unsigned char>(data, sw * sh);
-        strData[10] = '1';
-        writeFile("pixel.bmp", strData);
+        auto sw = screenWidth
+        // / 2
+         , sh = screenHeight 
+       //  / 2
+         ;
+        glReadPixels(0,0, screenWidth,screenHeight, GL_RGB, GL_UNSIGNED_BYTE, data);
+        // auto strData = toRGB<float, unsigned char>(data, sw * sh);
+        // strData[10] = '1';
+        // writeFile("pixel.bmp", strData);
+        stbi_write_bmp("pixelCap.bmp",sw,sh,3,data);
         GL_ERROR_STOP();
     }
     return 0;
