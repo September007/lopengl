@@ -21,13 +21,19 @@ endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 # dependencies of glew, glfw, glad
 add_subdirectory("extern/glew-2.1.0/build/cmake")
 add_subdirectory("extern/glfw-3.0.4")
+add_subdirectory("extern/googletest")
+add_subdirectory("src/test_frame")
 set(extern_include_dirs 
   "extern/glad/include"
   "extern/glew-2.1.0/include"
   "extern/glfw-3.0.4/include"
+  "extern/googletest/googletest/include"
   "./src/include"
 )
 include_directories(${extern_include_dirs})
+include_directories(
+  "extern/googletest/googletest/include"
+  )
 
 find_package(OpenGL)
 
@@ -41,20 +47,14 @@ elseif(UNIX)
 else()
 endif()
 
-set(COMMON_LIBS ${COMMON_LIBS} ${EXTRA_LIBS})
-
-set(RUN_DIR ${PROJECT_SOURCE_DIR}/bin)
-
-
-# preprocessor
-
-# find_package(OpenMP)
-
 
 file(GLOB_RECURSE lazy_srcs "src/**.cpp")
-
 #  point out programs from which chp need be generate
-set(ACTIVED_CHP ch03)
+set(ACTIVED_CHP ch03 ch00 test_frame)
+# excluding target
+set(exclude_target test_main)
+
+
 set(EXES )
 foreach(src ${lazy_srcs})
     STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${src})
@@ -64,20 +64,39 @@ foreach(src ${lazy_srcs})
     list(APPEND EXES ${FILE_NAME})
 endforeach(src ${lazy_srcs})
 
-foreach( exe ${EXES})
+
+
+set_property(SOURCE "34.PriorGL-frameBuffer" PROPERTY shaderDeps 1)
+# add executable object 
+# properties  : specification
+# srcFile     : source file list
+# chpNo       : name of parentFolder,which is chapter name or what, this can be used to determain whether this target should be generate, which control by ${ACTIVED_CHP} 
+# shaderDeps  : if this need shader file support( under the Root/bin/glsl ),if need, there will be a post-build progress to move glsl file to target folder
+# additionalLibs  : like gtest
+function(this_add_executable exe)
     get_property(srcFile SOURCE ${exe} PROPERTY srcFile)
     get_property(chpNo SOURCE ${exe} PROPERTY chpNo)  
+    get_property(shaderDeps SOURCE ${exe} PROPERTY shaderDeps) 
+    get_property(additionalLibs SOURCE ${exe} PROPERTY additionalLibs)
     string(FIND "${ACTIVED_CHP}" ${chpNo} build_or_not )
-    if(${build_or_not} EQUAL -1)
-        continue()
+    string(FIND "${exclude_target}" ${exe} exclude_or_not)
+    message("t:${exe};chp:${chpNo};buildornot:${build_or_not};srcFs:${srcFile};shDep:${shaderDeps};addlib:${additionalLibs}")
+    if(${build_or_not} EQUAL -1 OR ${exclude_or_not} EQUAL 0)
+        return()
     endif()
-    add_executable(${exe} ${srcFile} "extern/glad/src/glad.c")
-    target_link_libraries(${exe} ${COMMON_LIBS})
-    if(MSVC)
-      # configure_file(${PROJECT_SOURCE_DIR}/build/templates/vs2013.vcxproj.user.in ${CMAKE_CURRENT_BINARY_DIR}/${EXAMPLE}.vcxproj.user @ONLY)
-    endif(MSVC)
-    
+    add_executable(${exe} ${srcFile} "extern/glad/src/glad.c" )
+    target_link_libraries(${exe} ${COMMON_LIBS} ${additionalLibs})
+    if(${shaderDeps} AND ${shaderDeps} EQUAL 1)
+        message("target ${exe} will have add_shaders_deps")
+        add_shaders_deps(${exe})
+    endif()
+endfunction()
+
+
+foreach( exe ${EXES})
+  this_add_executable(${exe})    
 endforeach()
+
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LINUX -std=c++0x")
