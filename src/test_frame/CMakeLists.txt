@@ -1,5 +1,5 @@
 
-project(test_frame)
+#project(test_frame)
 
 # # copy files to target path
 # execute_process(COMMAND powershell ls ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/glsl  RESULT_VARIABLE  result OUTPUT_QUIET ERROR_QUIET )
@@ -23,19 +23,24 @@ function(add_shaders_deps target)
 endfunction()
 
 # targets 
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/*.cpp test_srcs)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR} test_srcs)
 message("currrent_list_dir:${CMAKE_CURRENT_LIST_DIR}")
 # actually this is src/test_frame/test_main.cpp
 file(GLOB_RECURSE test_main_file test_main.cpp)
 message("test_main_file:${test_main_file}")
+message("test_srcs:${test_srcs}")
 foreach(src ${test_srcs})
     STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${src})
-    message("src:${src}")
     if(${src} EQUAL ${test_main_file})
         continue()
     endif()
-    set_property(SOURCE ${FILE_NAME} PROPERTY srcFile APPEND ${test_main_file} )
-    set_property(SOURCE ${FILE_NAME} PROPERTY additionalLibs APPEND GTest::gtest )
+    get_property(oldSrcFile SOURCE ${FILE_NAME} PROPERTY srcFile )
+    get_property(oldAdditionalLibs SOURCE ${FILE_NAME} PROPERTY additionalLibs )
+    #message("here ${FILE_NAME} oldSrcFile:${oldSrcFile};addlib:${oldAdditionalLibs}")
+    set_property(SOURCE ${FILE_NAME} PROPERTY srcFile ${oldSrcFile} ${test_main_file} )
+    set_property(SOURCE ${FILE_NAME} PROPERTY additionalLibs ${oldAdditionalLibs}  GTest::gtest )
     
 endforeach()
 
+get_property(srcFile SOURCE test_nv12_to_rgb PROPERTY srcFile)
+message("inside property srcFile:${srcFile}")
