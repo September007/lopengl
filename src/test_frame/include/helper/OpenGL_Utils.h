@@ -394,7 +394,7 @@ namespace Helper
     inline auto CreateTexture(GLuint textureTarget, const std::string &dataFile)
     {
         int width, height, nChannels;
-        auto data = stbi_load("../media/texture/bmp/2004050204170.bmp", &width, &height, &nChannels, 0);
+        auto data = stbi_load(dataFile.c_str(), &width, &height, &nChannels, 0);
         auto ret = CreateTexture(textureTarget, data, width, height, nChannels);
         stbi_image_free(data);
         return ret;
