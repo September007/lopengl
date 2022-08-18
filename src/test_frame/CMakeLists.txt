@@ -37,7 +37,8 @@ foreach(src ${test_srcs})
         #message("here ${FILE_NAME} oldSrcFile:${oldSrcFile};addlib:${oldAdditionalLibs}")
         set_property(SOURCE ${FILE_NAME} PROPERTY srcFile ${oldSrcFile} ${test_main_file} )
         set_property(SOURCE ${FILE_NAME} PROPERTY additionalLibs ${oldAdditionalLibs}  GTest::gtest )
-
+        set_property(SOURCE ${FILE_NAME} PROPERTY additionalIncludeDirs ${CMAKE_SOURCE_DIR}/src/test_frame/include)
+        
     endif()
 endforeach()
 

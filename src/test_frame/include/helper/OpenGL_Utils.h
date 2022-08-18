@@ -7,6 +7,9 @@
 #include <sstream>
 #include <vector>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <helper/stb_image.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -109,6 +112,7 @@ inline int bindAttributesLocations(GLint program, std::vector<std::pair<std::str
     glLinkProgram(program);
     return ret;
 }
+
 template <bool strict_ = STRICT_>
 struct ShaderObject
 {
@@ -346,9 +350,27 @@ std::string toRGB(UNIT *data, int pixelLength)
     return ret;
 }
 
+class TextureObject{
+    public:
+    std::shared_ptr<GLuint> obj;
+    int width, height, nChannels;
+    TextureObject(GLuint obj_){
+        obj.reset(new GLuint(obj_),[](GLuint*p){
+            if(p)
+                glDeleteTextures(1,p);
+            delete p;
+        });
+    }
+    auto GetTTexture()const {return *obj;}
+    void SetWHN(int w,int h,int n){
+        width=w;
+        height=h;
+        nChannels=n;
+    }
+};
 namespace Helper
 {
-    inline auto CreateTexture(GLuint textureTarget)
+    inline auto CreateTexture(GLuint textureTarget,void * data,int width,int height,int nChannels)
     {
         GLuint texture;
         glActiveTexture(textureTarget);
@@ -358,5 +380,18 @@ namespace Helper
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        auto ret= TextureObject(texture);
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels - 3, width, height, 0, GL_RGB + nChannels - 3, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        ret.SetWHN(width,height,nChannels);
+        return ret;
+    }
+    inline auto CreateTexture(GLuint textureTarget,const std::string&dataFile){
+        int width, height, nChannels;
+        auto data = stbi_load("../media/texture/bmp/2004050204170.bmp", &width, &height, &nChannels, 0);
+        auto ret= CreateTexture(textureTarget,data,width,height,nChannels);
+        stbi_image_free(data);
+        return ret;
     }
 } // namespace Helper

@@ -30,6 +30,9 @@ set(extern_include_dirs
   "extern/glfw-3.0.4/include"
   "extern/googletest/googletest/include"
   "./src/include"
+  # write include dir here , will cause all the target binding this include_dir
+  # this is only for the vscode intellisense to judge include dirs
+  "./src/test_frame/include"
 )
 include_directories(${extern_include_dirs})
 include_directories(
@@ -76,14 +79,17 @@ set_property(SOURCE "34.PriorGL-frameBuffer" PROPERTY shaderDeps 1)
 # chpNo       : name of parentFolder,which is chapter name or what, this can be used to determain whether this target should be generate, which control by ${ACTIVED_CHP} 
 # shaderDeps  : if this need shader file support( under the Root/bin/glsl ),if need, there will be a post-build progress to move glsl file to target folder
 # additionalLibs  : like gtest
+# additionalIncludeDirs  : like src/test_frame/include 
+
 function(this_add_executable exe)
     get_property(srcFile SOURCE ${exe} PROPERTY srcFile)
     get_property(chpNo SOURCE ${exe} PROPERTY chpNo)  
     get_property(shaderDeps SOURCE ${exe} PROPERTY shaderDeps) 
     get_property(additionalLibs SOURCE ${exe} PROPERTY additionalLibs)
+    get_property(additionalIncludeDirs SOURCE ${exe} PROPERTY additionalIncludeDirs)
     string(FIND "${ACTIVED_CHP}" ${chpNo} build_or_not )
     string(FIND "${exclude_target}" ${exe} exclude_or_not)
-   # message("t:${exe};chp:${chpNo};buildornot:${build_or_not};srcFs:${srcFile};shDep:${shaderDeps};addlib:${additionalLibs}")
+    message("t:${exe};chp:${chpNo};buildornot:${build_or_not};srcFs:${srcFile};shDep:${shaderDeps};addlib:${additionalLibs};additionalIncludeDirs:${additionalIncludeDirs}")
     if(${build_or_not} EQUAL -1 OR ${exclude_or_not} EQUAL 0)
         return()
     endif()
@@ -92,6 +98,10 @@ function(this_add_executable exe)
     if(${shaderDeps} AND ${shaderDeps} EQUAL 1)
         message("target ${exe} will have add_shaders_deps")
         add_shaders_deps(${exe})
+    endif()
+    if( additionalIncludeDirs)
+        message("target ${exe} will have adddirs:${additionalIncludeDirs}")
+        target_include_directories(${exe} PUBLIC ${additionalIncludeDirs})
     endif()
 endfunction()
 
