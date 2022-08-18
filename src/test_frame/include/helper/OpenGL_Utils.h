@@ -12,11 +12,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
 #include <type_traits>
-
-#include <iostream>
-#define report_error(msg) do{std::cerr<<"at "<<__FILE__<<" "\
-        <<__LINE__<<std::endl<<(msg)<<std::endl;\
-        throw std::runtime_error(msg);}while(0)
 #define STRICT_ true
 
 template <bool strict_ = STRICT_>
@@ -42,19 +37,13 @@ inline auto readFile(const std::string &f) -> std::string
             return "";
     }
 }
-inline auto writeFile(const std::string &fName,const std::string &data){
+
+inline auto writeFile(const std::string &fName, const std::string &data)
+{
     std::ofstream out(fName);
-    out<<data;
+    out << data;
     out.close();
     return out.good();
-}
-inline std::string getShaderInfoLog(GLint program, GLint shader)
-{
-
-    int ret_length;
-    GLchar infol[1024];
-    glGetShaderInfoLog(shader, 1024, &ret_length, infol);
-    return infol;
 }
 
 using AttributeInfo = struct
@@ -85,20 +74,12 @@ inline auto getAttributes(GLint program)
     return ret;
 }
 
-inline auto
-GetIntegerv(GLenum e)
-{
-    GLint ret;
-    glGetIntegerv(e,&ret);
-    return ret;
-}
-
 inline int error;
 #define GL_ERROR_STOP()                               \
     {                                                 \
         error = glGetError();                         \
         if (error != 0)                               \
-           report_error(std::string("GL_ERROR_STOP")+std::to_string(__LINE__)); \
+            throw std::runtime_error("gl get error"); \
     }
 // \ret
 // ret==0: success
@@ -157,7 +138,7 @@ struct ShaderObject
             tempInfo = {infoLog, infoLog + len};
             if constexpr (strict_)
             {
-                report_error(tempInfo);//throw std::runtime_error("shader compile failed:\n\t" + tempInfo);
+                throw std::runtime_error("shader compile failed:\n\t" + tempInfo);
             }
         }
     }
@@ -207,7 +188,7 @@ struct ProgramObject
         auto ret = getInfo(GL_LINK_STATUS);
         if constexpr (strict_)
             if (ret != GL_TRUE)
-                report_error("program link failed:\n\t" + tempInfo);//throw std::runtime_error("program link failed:\n\t" + tempInfo);
+                throw std::runtime_error("program link failed:\n\t" + tempInfo);
     }
     GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
@@ -239,9 +220,7 @@ struct ProgramObject
             glGetActiveUniform(getProgram(), GLint(i), name_length, &used_cache_name_length, &info.size, &info.type, cache_name);
             info.name = std::string(cache_name, cache_name + used_cache_name_length);
             info.position = glGetUniformLocation(getProgram(), info.name.c_str());
-            auto p=ret.size();
             ret[info.name] = info;
-            std::cout<<ret[info.name].name<<std::endl;
         }
         return ret;
     }
@@ -302,60 +281,21 @@ namespace Helper
 
 } // namespace Helper
 
-template <int index, int dim, typename T, glm::qualifier Q>
- inline auto &at(typename glm::vec<dim, T, Q> &vec)
-{
-    static_assert(index < dim, "index out of range, what are you trying to do!!!");
-    if constexpr (index == 0)
-        return vec.x;
-    else if constexpr (index == 1)
-        return vec.y;
-    else if constexpr (index == 2)
-        return vec.z;
-    else if constexpr (index == 3)
-        return vec.w;
-}
-template <int index, int dim, typename T, glm::qualifier Q>
- inline auto &at(typename glm::vec<dim, T, Q> const &vec)
-{
-    static_assert(index < dim, "index out of range, what are you trying to do!!!");
-    if constexpr (index == 0)
-        return vec.x;
-    else if constexpr (index == 1)
-        return vec.y;
-    else if constexpr (index == 2)
-        return vec.z;
-    else if constexpr (index == 3)
-        return vec.w;
-}
 template <int dim, typename T, glm::qualifier Q>
 inline auto to_string(typename glm::vec<dim, T, Q> const &v)
 {
     std::string ret;
     if constexpr (dim > 0)
-        ret += std::to_string(at<0>(v)) + ' ';
+        ret += std::to_string(v.x) + ' ';
     if constexpr (dim > 1)
-        ret += std::to_string(at<1>(v)) + ' ';
+        ret += std::to_string(v.y) + ' ';
     if constexpr (dim > 2)
-        ret += std::to_string(at<2>(v)) + ' ';
+        ret += std::to_string(v.z) + ' ';
     if constexpr (dim > 3)
-        ret += std::to_string(at<3>(v)) + ' ';
+        ret += std::to_string(v.w) + ' ';
     return ret;
 }
 
-template <int dim, typename T, glm::qualifier Q>
- inline auto &at(typename glm::vec<dim, T, Q> &vec, int index)
-{
-    static_assert(index < dim, "index out of range, what are you trying to do!!!");
-    if (index == 0)
-        return vec.x;
-    else if (index == 1)
-        return vec.y;
-    else if (index == 2)
-        return vec.z;
-    else if (index == 3)
-        return vec.w;
-}
 // from left to right
 // if these transform matrix let
 template <typename... restMAT>
@@ -378,6 +318,7 @@ inline auto getSrcFileNameOnlyName(std::string const &fullName)
     auto dotPos = filename.find_last_of('.');
     return filename.substr(0, dotPos);
 }
+
 template <typename T, typename T1 = T, typename T2 = T>
 inline auto clamp(T val, T1 minVal, T2 maxVal) -> T
 {
@@ -388,17 +329,34 @@ inline auto clamp(T val, T1 minVal, T2 maxVal) -> T
         return maxVal;
     return val;
 }
-template<typename UNIT,typename TO>
-std::string toRGB(UNIT*data,int pixelLength){
+
+template <typename UNIT, typename TO>
+std::string toRGB(UNIT *data, int pixelLength)
+{
     std::string ret;
-    ret.resize(3*pixelLength*sizeof(TO));
-    for(int i=0;i<pixelLength;++i){
-        void *p=ret.data()+sizeof(TO)*i*3;
-        TO*pp=reinterpret_cast<TO*>( p);
-        pp[0]=data[i*3];
-        pp[1]=data[i*3+1];
-        pp[2]=data[i*3+2];
+    ret.resize(3 * pixelLength * sizeof(TO));
+    for (int i = 0; i < pixelLength; ++i)
+    {
+        void *p = ret.data() + sizeof(TO) * i * 3;
+        TO *pp = reinterpret_cast<TO *>(p);
+        pp[0] = data[i * 3];
+        pp[1] = data[i * 3 + 1];
+        pp[2] = data[i * 3 + 2];
     }
     return ret;
 }
 
+namespace Helper
+{
+    inline auto CreateTexture(GLuint textureTarget)
+    {
+        GLuint texture;
+        glActiveTexture(textureTarget);
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
+} // namespace Helper

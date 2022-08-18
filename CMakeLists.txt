@@ -40,11 +40,12 @@ find_package(OpenGL)
 
 set(CMAKE_DEBUG_POSTFIX "_d")
 
+
 if(WIN32)
   set(COMMON_LIBS   glew glfw legacy_stdio_definitions.lib opengl32.lib )
 elseif(UNIX)
   find_package(PkgConfig REQUIRED)
-  set(COMMON_LIBS glew)
+  set(COMMON_LIBS glew glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL rt dl)
 else()
 endif()
 
@@ -100,7 +101,7 @@ endforeach()
 
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LINUX -std=c++0x")
+ # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LINUX -std=c++0x")
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 
