@@ -1,6 +1,7 @@
 #version 330
 //in vec4 color;
 in vec2 texCoord;
+in vec4 color;
 out vec4 FragColor;
 
 uniform vec4 offset;

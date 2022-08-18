@@ -3,8 +3,10 @@
 layout(location=0)in vec3 aPos;
 //layout(location=1)in vec3 aCol;
 layout(location=2)in vec2 aTexCoord;
+layout(location=5)in float aChooseTex;
 out vec4 color;
 out vec2 texCoord;
+out float ChooseTex;
 
 uniform mat4 model;
 uniform mat4 view;

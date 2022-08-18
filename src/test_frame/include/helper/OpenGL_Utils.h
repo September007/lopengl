@@ -350,27 +350,31 @@ std::string toRGB(UNIT *data, int pixelLength)
     return ret;
 }
 
-class TextureObject{
-    public:
+class TextureObject
+{
+public:
     std::shared_ptr<GLuint> obj;
     int width, height, nChannels;
-    TextureObject(GLuint obj_){
-        obj.reset(new GLuint(obj_),[](GLuint*p){
+    TextureObject() = delete;
+    TextureObject(GLuint obj_)
+    {
+        obj.reset(new GLuint(obj_), [](GLuint *p)
+                  {
             if(p)
                 glDeleteTextures(1,p);
-            delete p;
-        });
+            delete p; });
     }
-    auto GetTTexture()const {return *obj;}
-    void SetWHN(int w,int h,int n){
-        width=w;
-        height=h;
-        nChannels=n;
+    auto GetTTexture() const { return *obj; }
+    void SetWHN(int w, int h, int n)
+    {
+        width = w;
+        height = h;
+        nChannels = n;
     }
 };
 namespace Helper
 {
-    inline auto CreateTexture(GLuint textureTarget,void * data,int width,int height,int nChannels)
+    inline auto CreateTexture(GLuint textureTarget, void *data, int width, int height, int nChannels)
     {
         GLuint texture;
         glActiveTexture(textureTarget);
@@ -380,18 +384,122 @@ namespace Helper
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        auto ret= TextureObject(texture);
-        
+        auto ret = TextureObject(texture);
+
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels - 3, width, height, 0, GL_RGB + nChannels - 3, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        ret.SetWHN(width,height,nChannels);
+        ret.SetWHN(width, height, nChannels);
         return ret;
     }
-    inline auto CreateTexture(GLuint textureTarget,const std::string&dataFile){
+    inline auto CreateTexture(GLuint textureTarget, const std::string &dataFile)
+    {
         int width, height, nChannels;
         auto data = stbi_load("../media/texture/bmp/2004050204170.bmp", &width, &height, &nChannels, 0);
-        auto ret= CreateTexture(textureTarget,data,width,height,nChannels);
+        auto ret = CreateTexture(textureTarget, data, width, height, nChannels);
         stbi_image_free(data);
         return ret;
     }
 } // namespace Helper
+
+using glm::vec3;
+/* note :
+    1. mouseCallback scrollCallback processInput should add to glfw callback
+    2. Tick should add to render loop begin
+    3. use GetProjectionMatrix and GetViewMatrix to obtain relevant matrix
+*/
+class CameraWithController
+{
+public:
+    CameraWithController(int sw, int sh) : screenWidth(sw), screenHeight(sh) {}
+    int screenWidth, screenHeight;
+    // camera variables, application like 'glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);'
+    glm::vec3 cameraPos = vec3(0, 0, 3);
+    glm::vec3 cameraFront = vec3(0, 0, -1);
+    glm::vec3 cameraUp = vec3(0, 1, 0);
+
+    float cameraSpeed = 0.5;
+    // direction && mouse input
+    float pitch = 0;
+    float yaw = -90;
+    float roll = 0;
+    float lastX = screenWidth / 2, lastY = screenHeight / 2;
+    // the duration between last two frame, in seconds, this will be set in render loop
+    float deltaTime = 0;
+    float lastFrameTime = 0;
+
+    float fov = 40;
+    // this is for debuging pause balahbalh to clip deltaTime to a normal value
+    float constexpr static deltaTimeClipMax = 0.05;
+
+    bool first = true; // record first time the follow work
+    void mouseCallback(double xpos, double ypos)
+    {
+        auto offsetX = xpos - lastX;
+        auto offsetY = lastY - ypos; // reversed since y-coordinates go from bottom to top
+        lastX = xpos;
+        lastY = ypos;
+        if (first)
+        {
+            first = false;
+            return;
+        }
+
+        float sensitivity = 0.05;
+        offsetX *= sensitivity;
+        offsetY *= sensitivity;
+
+        yaw += offsetX;
+        pitch += offsetY;
+        // pitch=clamp(pitch,-89,89);
+        auto cp = cos(glm::radians<float>(pitch));
+        auto cy = cos(glm::radians<float>(yaw));
+        glm::vec3 front;
+        front.x = cos(glm::radians<float>(pitch)) * cos(glm::radians<float>(yaw));
+        front.y = sin(glm::radians<float>(pitch));
+        front.z = cos(glm::radians<float>(pitch)) * sin(glm::radians<float>(yaw));
+
+        auto nf = glm::normalize(front);
+        cameraFront = nf;
+    }
+    void scrollCallback(double offsetX, double offsetY)
+    {
+        if (fov >= 1.0 && fov <= 45)
+            fov -= offsetY;
+        fov = clamp(fov, 1, 45);
+    }
+    void processInput(GLFWwindow *window)
+    {
+        auto speed = cameraSpeed * deltaTime;
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            cameraPos += cameraFront * speed;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            cameraPos -= cameraFront * speed;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            cameraPos -= glm::normalize(cross(cameraFront, cameraUp)) * speed;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            cameraPos += glm::normalize(cross(cameraFront, cameraUp)) * speed;
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+            cameraSpeed -= deltaTime * 1;
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+            cameraSpeed += deltaTime * 1;
+    }
+void framebuffer_size_callback(GLFWwindow *window, int width_, int height_)
+{
+    this->screenWidth=width_;
+    this->screenHeight=height_;
+}
+    auto GetProjectionMatrix()
+    {
+        return glm::perspective(glm::radians(fov), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+    }
+    auto GetViewMatrix(){
+        return glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);
+    }
+    // when ct==0,this will disable keyboard affection
+    void Tick(double currentTime){
+        deltaTime = glm::min<float>(deltaTimeClipMax,glm::max<float>(0, currentTime - lastFrameTime));
+        lastFrameTime = currentTime;
+    }
+};
