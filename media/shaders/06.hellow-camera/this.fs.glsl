@@ -12,5 +12,5 @@ void main(){
     mix(
         texture(ourTexture1,texCoord),
         texture(ourTexture2,texCoord),
-    1);
+    0.5);
 }

@@ -134,6 +134,45 @@ int tmain()
     TextureObject t2=Helper::CreateTexture(GL_TEXTURE1,"../media/texture/bmp/2004050204170.bmp");
     texture2=t2.GetTTexture();
     
+    
+    // GLuint texture;
+    // glActiveTexture(GL_TEXTURE0);
+    // glGenTextures(1, &texture);
+    // glBindTexture(GL_TEXTURE_2D, texture);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // // 8 bit!!!!, if not, use GL_LINEAR instead of GL_NEARST
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // int width, height, nChannels;
+    // // OpenGL image coord.y(y=0) is at bottom ,but image coord.y(y=0) is at top
+    // stbi_set_flip_vertically_on_load(true);
+    // auto data = stbi_load("../media/texture/bmp/Rainbow.bmp", &width, &height, &nChannels, 3);
+    // _ASSERT(data != nullptr);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels - 3, width, height, 0, GL_RGB + nChannels - 3, GL_UNSIGNED_BYTE, data);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+
+    // stbi_image_free(data);
+
+    // GLuint texture2;
+    // glActiveTexture(GL_TEXTURE1);
+    // glGenTextures(1, &texture2);
+    // glBindTexture(GL_TEXTURE_2D, texture2);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // int width2, height2, nChannels2;
+    // auto data2 = stbi_load("../media/texture/bmp/2004050204170.bmp", &width2, &height2, &nChannels2, 0);
+    // _ASSERT(data2 != nullptr);
+    // // see this strange format paramter,since GL_RGBA=GL_RGBA + 1, when nChannels get 4 , the value is equal to GL_RGBA
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels2 - 3, width2, height2, 0, GL_RGB + nChannels2 - 3, GL_UNSIGNED_BYTE, data2);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+
+    // stbi_image_free(data2);
+    
     GL_ERROR_STOP();
     constexpr auto __L = -1.f, __R = 1.f;
     constexpr auto _L = -0.3f, _R = 0.3f;
@@ -231,6 +270,7 @@ int tmain()
     // glUniform1i(glGetUniformLocation(program.getProgram(),"ourTexture1"),0);
     GL_ERROR_STOP();
     program.setInt("ourTexture2", 1);
+    program.setInt("ourTexture1", 0);
     GL_ERROR_STOP();
     std::map<int, int> frame_record;
     frame_record[-1] = 0;
