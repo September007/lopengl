@@ -207,3 +207,53 @@ namespace Light
 	};
 	
 }
+
+namespace Light
+{
+	class VertexArray
+	{
+	public:
+		VertexArray() = default;
+		virtual ~VertexArray() = default;
+
+		virtual void bind() const = 0;
+		virtual void unbind() const = 0;
+
+		virtual void addVertexBuffer(const std::shared_ptr<VertexBuffer>& vbo) = 0;
+		virtual void setIndexBuffer(const std::shared_ptr<IndexBuffer>& ibo) = 0;
+
+		virtual const std::vector<std::shared_ptr<VertexBuffer>>& getVertexBuffers() const = 0;
+		virtual const std::shared_ptr<IndexBuffer>& getIndexBuffer() const = 0;
+
+		static VertexArray* create();
+	};
+
+}
+
+namespace Light
+{
+	class OpenGLVertexArray : public VertexArray
+	{
+	public:
+		OpenGLVertexArray();
+		virtual ~OpenGLVertexArray();
+
+		void bind() const override;
+		void unbind() const override;
+
+		void addVertexBuffer(const std::shared_ptr<VertexBuffer>& vbo) override;
+		void setIndexBuffer(const std::shared_ptr<IndexBuffer>& ibo) override;
+
+		const std::vector<std::shared_ptr<VertexBuffer>>& getVertexBuffers() const override { return m_vertexBuffers; }
+		const std::shared_ptr<IndexBuffer>& getIndexBuffer() const override { return m_indexBuffer; }
+
+	private:
+		uint32_t m_rendererId;
+
+		std::vector<std::shared_ptr<VertexBuffer>> m_vertexBuffers;
+		std::shared_ptr<IndexBuffer> m_indexBuffer;
+	};
+
+}
+
+

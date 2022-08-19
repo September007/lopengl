@@ -29,11 +29,11 @@ set(extern_include_dirs
   "extern/glew-2.1.0/include"
   "extern/glfw-3.0.4/include"
   "extern/googletest/googletest/include"
-  "./src/include"
+  "src/include"
   # write include dir here , will cause all the target binding this include_dir
   # this is only for the vscode intellisense to judge include dirs
-  "./src/test_frame/include"
-  "./src/test_frame/include/Light"
+  "src/test_frame/include"
+  "src/include/Light"
 )
 include_directories(${extern_include_dirs})
 include_directories(

@@ -61,4 +61,5 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #define LIGHT_CORE_WARN(...)
+#define LIGHT_CORE_ERROR(...)
 #endif // __BASE_H__
