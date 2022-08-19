@@ -33,6 +33,7 @@ set(extern_include_dirs
   # write include dir here , will cause all the target binding this include_dir
   # this is only for the vscode intellisense to judge include dirs
   "./src/test_frame/include"
+  "./src/test_frame/include/Light"
 )
 include_directories(${extern_include_dirs})
 include_directories(
