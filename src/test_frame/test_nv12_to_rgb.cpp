@@ -11,89 +11,41 @@ using glm::radians;
 using glm::rotate;
 using glm::vec3;
 
+// primitive attribute, this will be trans into shader for distinguising current-handling primitive
+#define PRIMITIVE_NONE  0
+#define PRIMITIVE_CIRCLE_POINT 1
+#define PRIMITIVE_LINE 2
+
 constexpr int screenWidth = 800, screenHeight = 600;
-// camera variables, application like 'glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);'
-glm::vec3 cameraPos = vec3(0, 0, 3);
-glm::vec3 cameraFront = vec3(0, 0, -1);
-glm::vec3 cameraUp = vec3(0, 1, 0);
 
-float cameraSpeed = 0.5;
-// direction && mouse input
-float pitch = 0;
-float yaw = -90;
-float roll = 0;
-float lastX = screenWidth / 2, lastY = screenHeight / 2;
-// the duration between last two frame, in seconds, this will be set in render loop
-float deltaTime = 0;
-float lastFrameTime = 0;
+CameraWithController camera(screenWidth, screenHeight);
 
-float fov = 40;
-// this is for debuging pause balahbalh to clip deltaTime to a normal value
-float constexpr deltaTimeClipMax = 0.05;
 void mouseCallback(GLFWwindow *window, double xpos, double ypos)
 {
-    static bool first = true;
-    auto offsetX = xpos - lastX;
-    auto offsetY = lastY - ypos; // reversed since y-coordinates go from bottom to top
-    lastX = xpos;
-    lastY = ypos;
-    if (first)
-    {
-        first = false;
-        return;
-    }
-
-    float sensitivity = 0.05;
-    offsetX *= sensitivity;
-    offsetY *= sensitivity;
-
-    yaw += offsetX;
-    pitch += offsetY;
-    // pitch=clamp(pitch,-89,89);
-    auto cp = cos(glm::radians<float>(::pitch));
-    auto cy = cos(glm::radians<float>(::yaw));
-    glm::vec3 front;
-    front.x = cos(glm::radians<float>(::pitch)) * cos(glm::radians<float>(::yaw));
-    front.y = sin(glm::radians<float>(::pitch));
-    front.z = cos(glm::radians<float>(::pitch)) * sin(glm::radians<float>(::yaw));
-
-    auto nf = glm::normalize(front);
-    cameraFront = nf;
+    camera.mouseCallback(xpos, ypos);
 }
 void scrollCallback(GLFWwindow *window, double offsetX, double offsetY)
 {
-    if (fov >= 1.0 && fov <= 45)
-        fov += offsetY;
-    fov = clamp(fov, 1, 45);
+    camera.scrollCallback(offsetX, offsetY);
 }
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
+    camera.framebuffer_size_callback(window, width, height);
     glViewport(0, 0, width, height);
 }
 void processInput(GLFWwindow *window)
 {
-    auto speed = cameraSpeed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraFront * speed;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraFront * speed;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(cross(cameraFront, cameraUp)) * speed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(cross(cameraFront, cameraUp)) * speed;
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        cameraSpeed -= deltaTime * 1;
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        cameraSpeed += deltaTime * 1;
+    camera.processInput(window);
 }
 
 int tmain()
 {
+    {// set camera position
+        camera.cameraPos=vec3(0,0,2);
+        
+    }
     constexpr char *p = __FILE__;
     glfwInit();
-
     glfwWindowHint(GL_SAMPLES, 8);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -121,120 +73,57 @@ int tmain()
     // shader && program
     ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.vs.glsl")};
     ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.fs.glsl")};
-    // return GL_TRUE , which is 1
-    GLint shaderCompileStatus[] = {vs.getInfo(GL_COMPILE_STATUS), fs.getInfo(GL_COMPILE_STATUS)};
+    ShaderObject draw_line_fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/draw_axiss.fs.glsl")};
+    
     ProgramObject program = Helper::CreateProgram(vs, fs);
+    ProgramObject draw_line_program=Helper::CreateProgram(vs,draw_line_fs);
     // load texture
-
     GLuint texture;
-    TextureObject t1=Helper::CreateTexture(GL_TEXTURE0, "../media/texture/bmp/Rainbow.bmp");
-    texture=t1.GetTTexture();
+    TextureObject t1 = Helper::CreateTexture(GL_TEXTURE0, "../media/texture/bmp/skiing.dib");
+    texture = t1.GetTTexture();
 
     GLuint texture2;
-    TextureObject t2=Helper::CreateTexture(GL_TEXTURE1,"../media/texture/bmp/2004050204170.bmp");
-    texture2=t2.GetTTexture();
-    
-    
-    // GLuint texture;
-    // glActiveTexture(GL_TEXTURE0);
-    // glGenTextures(1, &texture);
-    // glBindTexture(GL_TEXTURE_2D, texture);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // // 8 bit!!!!, if not, use GL_LINEAR instead of GL_NEARST
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    TextureObject t2 = Helper::CreateTexture(GL_TEXTURE1, "../media/texture/bmp/2004050204170.bmp");
+    texture2 = t2.GetTTexture();
 
-    // int width, height, nChannels;
-    // // OpenGL image coord.y(y=0) is at bottom ,but image coord.y(y=0) is at top
-    // stbi_set_flip_vertically_on_load(true);
-    // auto data = stbi_load("../media/texture/bmp/Rainbow.bmp", &width, &height, &nChannels, 3);
-    // _ASSERT(data != nullptr);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels - 3, width, height, 0, GL_RGB + nChannels - 3, GL_UNSIGNED_BYTE, data);
-    // glGenerateMipmap(GL_TEXTURE_2D);
-
-    // stbi_image_free(data);
-
-    // GLuint texture2;
-    // glActiveTexture(GL_TEXTURE1);
-    // glGenTextures(1, &texture2);
-    // glBindTexture(GL_TEXTURE_2D, texture2);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // int width2, height2, nChannels2;
-    // auto data2 = stbi_load("../media/texture/bmp/2004050204170.bmp", &width2, &height2, &nChannels2, 0);
-    // _ASSERT(data2 != nullptr);
-    // // see this strange format paramter,since GL_RGBA=GL_RGBA + 1, when nChannels get 4 , the value is equal to GL_RGBA
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels2 - 3, width2, height2, 0, GL_RGB + nChannels2 - 3, GL_UNSIGNED_BYTE, data2);
-    // glGenerateMipmap(GL_TEXTURE_2D);
-
-    // stbi_image_free(data2);
-    
     GL_ERROR_STOP();
-    constexpr auto __L = -1.f, __R = 1.f;
-    constexpr auto _L = -0.3f, _R = 0.3f;
-    // position color
+
+    auto intAsFloat=[](int32_t i){
+        float ret=*reinterpret_cast<float*>(&i);
+        return ret;
+    };
+    constexpr auto __L = 1.f, __R = -1.f;
+    constexpr auto _L = -0.f, _R = 0.3f, _D = 0.0f;
+    constexpr auto _LL = -0.3f, _RR = 0.3f;
+    constexpr auto _L1=-0.8f,_R1=0.0f,_B1=-0.2f,_T1=-_B1;
+    constexpr auto _L2=-0.0f,_R2=0.8f,_B2=-0.2f,_T2=-_B2;
+    // position : 3     color : 2       primitive : 1
     float vertices[] = {
-        _L, _L, _L, __L, __L,
-        _R, _L, _L, __R, __L,
-        _R, _R, _L, __R, __R,
-        _R, _R, _L, __R, __R,
-        _L, _R, _L, __L, __R,
-        _L, _L, _L, __L, __L,
+        _L1, _B1, _D, __L, __L,PRIMITIVE_NONE,
+        _R1, _B1, _D, __R, __L,PRIMITIVE_NONE,
+        _R1, _T1, _D, __R, __R,PRIMITIVE_NONE,
+        _L1, _T1, _D, __L, __R,PRIMITIVE_NONE,
 
-        _L, _L, _R, __L, __L,
-        _R, _L, _R, __R, __L,
-        _R, _R, _R, __R, __R,
-        _R, _R, _R, __R, __R,
-        _L, _R, _R, __L, __R,
-        _L, _L, _R, __L, __L,
-
-        _L, _R, _R, __R, __L,
-        _L, _R, _L, __R, __R,
-        _L, _L, _L, __L, __R,
-        _L, _L, _L, __L, __R,
-        _L, _L, _R, __L, __L,
-        _L, _R, _R, __R, __L,
-
-        _R, _R, _R, __R, __L,
-        _R, _R, _L, __R, __R,
-        _R, _L, _L, __L, __R,
-        _R, _L, _L, __L, __R,
-        _R, _L, _R, __L, __L,
-        _R, _R, _R, __R, __L,
-
-        _L, _L, _L, __L, __R,
-        _R, _L, _L, __R, __R,
-        _R, _L, _R, __R, __L,
-        _R, _L, _R, __R, __L,
-        _L, _L, _R, __L, __L,
-        _L, _L, _L, __L, __R,
-
-        _L, _R, _L, __L, __R,
-        _R, _R, _L, __R, __R,
-        _R, _R, _R, __R, __L,
-        _R, _R, _R, __R, __L,
-        _L, _R, _R, __L, __L,
-        _L, _R, _L, __L, __R};
-
-    glm::vec3 cubePositions[] = {
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(2.0f, 5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3(2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f, 3.0f, -7.5f),
-        glm::vec3(1.3f, -2.0f, -2.5f),
-        glm::vec3(1.5f, 2.0f, -2.5f),
-        glm::vec3(1.5f, 0.2f, -1.5f),
-        glm::vec3(-1.3f, 1.0f, -1.5f)};
+        _L2, _B2, _D, __L, __L,PRIMITIVE_NONE,
+        _R2, _B2, _D, __R, __L,PRIMITIVE_NONE,
+        _R2, _T2, _D, __R, __R,PRIMITIVE_NONE,
+        _L2, _T2, _D, __L, __R,PRIMITIVE_NONE,
+        // debugging O(0,0,0) X(1,0,0) Y(0,1,0)
+        // line 
+        0,0,0, 0,0, PRIMITIVE_LINE,
+        1,0,0, 0,0, PRIMITIVE_LINE,
+        0,1,0, 0,0, PRIMITIVE_LINE,
+        // point
+        0,0,0, 0,0, PRIMITIVE_CIRCLE_POINT,
+        1,0,0, 0,0, PRIMITIVE_CIRCLE_POINT,
+        0,1,0, 0,0, PRIMITIVE_CIRCLE_POINT,
+        };
     GLuint indices[] = {
-        0, 1, 2,    // triangle one
-        0, 1, 3,    // triangle two
-        0, 1, 2, 3, // rectangle
+        0, 1, 2,    // left triangle one
+        0, 2, 3,    // left triangle two
+        4, 5, 6,    //right triangle one
+        4, 6, 7,    //right triangle two
+        8,9,8,10
     };
     GLuint VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -249,10 +138,13 @@ int tmain()
     // 3. 设置顶点属性指针 //
     _ASSERT(attribitues.find("aPos") != attribitues.end());
     _ASSERT(attribitues.find("aTexCoord") != attribitues.end());
-    glVertexAttribPointer(attribitues["aPos"].position, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    int strip = 6;
+    glVertexAttribPointer(attribitues["aPos"].position, 3, GL_FLOAT, GL_FALSE, strip * sizeof(float), (void *)0);
     glEnableVertexAttribArray(attribitues["aPos"].position);
-    glVertexAttribPointer(attribitues["aTexCoord"].position, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(attribitues["aTexCoord"].position, 2, GL_FLOAT, GL_FALSE, strip * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(attribitues["aTexCoord"].position);
+    //glVertexAttribPointer(attribitues["aChooseTex"].position, 1, GL_FLOAT, GL_FALSE, strip * sizeof(float), (void *)(5 * sizeof(float)));
+    //glEnableVertexAttribArray(attribitues["aChooseTex"].position);
 
     // 4. 绑定 EBO //
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -281,8 +173,7 @@ int tmain()
     while (!glfwWindowShouldClose(window))
     {
         double tm = glfwGetTime();
-        deltaTime = min<float>(deltaTimeClipMax, tm - lastFrameTime);
-        lastFrameTime = tm;
+        camera.Tick(tm);
         processInput(window);
         glfwPollEvents();
         glClearColor(0.2, .2, .3, 1);
@@ -290,14 +181,18 @@ int tmain()
 
         glUseProgram(program.getProgram());
         // coordinate transform
-        mat4 model = rotate<float>(mat4(1.f), tm * radians<float>(-55), vec3(0.5, 1.0, 0));
-        mat4 view = glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);
+        mat4 model = glm::mat4(1.0f);
+       // model = rotate<float>(mat4(1.f), tm * radians<float>(-55), vec3(0.5, 1.0, 0));
+        mat4 view = camera.GetViewMatrix();
         view = glm::translate(view, glm::vec3(0.0f, 0.0f,
-                                              -3 // sinf(tm)*2
+                                              -1 // sinf(tm)*2
                                               ));
         auto rate = float(screenWidth) / screenHeight;
-        auto projection = glm::perspective(glm::radians(fov), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+        auto projection = camera.GetProjectionMatrix();
         GL_ERROR_STOP();
+        // shut camera view-changing
+        //model=projection= view=mat4(1.0f);
+        //
         program.setFloat("mixRate", sinf(tm) / 2 + 0.5);
         int model_loc = program.getUniformLocation("model");
         int view_loc = program.getUniformLocation("view");
@@ -308,21 +203,48 @@ int tmain()
         GL_ERROR_STOP();
 
         glBindVertexArray(VAO);
+        // left rectangle
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 3 + (GLuint *)0);
+        // right rectangle
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 6 + (GLuint *)0);
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 9 + (GLuint *)0);
 
-        glm::mat4 baseRotation = glm::rotate(glm::mat4(1.0f), glm::radians<float>(tm * 19), glm::vec3(1.0, 0, 0));
-        for (int i = 0; i < 10; ++i)
-        {
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), cubePositions[i]);
-            model = rotate<float>(model, glm::radians<float>(20.f * i), glm::vec3(1.0, 0.3, 0.5));
-            model = model * baseRotation;
-            glUniformMatrix4fv(program.getUniformLocation("model"), 1, GL_FALSE, value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        GL_ERROR_STOP();
 
+
+
+        // draw O,X,Y   see shader: O:black, X:red, Y:green
+        glPointSize(20);
+        model=glm::translate(glm::mat4(1.0f),glm::vec3(0,0,0.5));
+        glUseProgram(draw_line_program.getProgram());
+        auto d_attributes=draw_line_program.getAttributes();
+        auto d_uniforms=draw_line_program.getUniforms();
+        _ASSERT(d_uniforms.find("model")!=d_uniforms.end());
+        _ASSERT(d_uniforms.find("view")!=d_uniforms.end());
+        _ASSERT(d_uniforms.find("projection")!=d_uniforms.end());
+        _ASSERT(d_uniforms.find("primitive_id")!=d_uniforms.end());
+        glUniformMatrix4fv(d_uniforms["model"].position, 1, GL_FALSE, value_ptr(model));
+        glUniformMatrix4fv(d_uniforms["view"].position, 1, GL_FALSE, value_ptr(view));
+        glUniformMatrix4fv(d_uniforms["projection"].position, 1, GL_FALSE, value_ptr(projection));
+        glBindVertexArray(VAO);
+        glLineWidth(10);
+        // X-axis + Y-axis
+        glUniform1i(d_uniforms["primitive_id"].position,PRIMITIVE_LINE);
+        glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, 12 + (GLuint *)0);
+        glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, 14 + (GLuint *)0);
+        // O + X + Y
+        glUniform1i(d_uniforms["primitive_id"].position,PRIMITIVE_CIRCLE_POINT);
+        glDrawElements(GL_POINTS, 3, GL_UNSIGNED_INT, 13 + (GLuint *)0);
+        
+        GL_ERROR_STOP();
+        
+        
         glfwSwapBuffers(window);
     }
     return 0;
 }
-TEST(l,r){
+TEST(l, r)
+{
     tmain();
 }

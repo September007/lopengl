@@ -11,6 +11,9 @@ set(glsl_path "${CMAKE_SOURCE_DIR}/src/test_frame/glsl" CACHE STRING "")
 set(glsl_target_path "${CMAKE_SOURCE_DIR}/bin/glsl" CACHE STRING "")
 file(GLOB_RECURSE shader_srcs ${glsl_path}/*.glsl)
 
+set(Light_src_dir "${CMAKE_SOURCE_DIR}/src/test_frame/Light" )
+file(GLOB_RECURSE Light_srcs ${Light_src_dir}/*.cpp)
+
 
 function(add_shaders_deps target)
     add_custom_command(TARGET ${target}
@@ -35,7 +38,7 @@ foreach(src ${test_srcs})
         get_property(oldSrcFile SOURCE ${FILE_NAME} PROPERTY srcFile )
         get_property(oldAdditionalLibs SOURCE ${FILE_NAME} PROPERTY additionalLibs )
         #message("here ${FILE_NAME} oldSrcFile:${oldSrcFile};addlib:${oldAdditionalLibs}")
-        set_property(SOURCE ${FILE_NAME} PROPERTY srcFile ${oldSrcFile} ${test_main_file} )
+        set_property(SOURCE ${FILE_NAME} PROPERTY srcFile ${Light_srcs} ${oldSrcFile} ${test_main_file} )
         set_property(SOURCE ${FILE_NAME} PROPERTY additionalLibs ${oldAdditionalLibs}  GTest::gtest )
         set_property(SOURCE ${FILE_NAME} PROPERTY additionalIncludeDirs ${CMAKE_SOURCE_DIR}/src/test_frame/include)
         
