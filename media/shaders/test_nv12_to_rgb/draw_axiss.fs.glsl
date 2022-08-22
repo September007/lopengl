@@ -31,7 +31,10 @@ void main(){
     if(primitive_id==PRIMITIVE_CIRCLE_POINT){
         vec2 relative_point=gl_PointCoord-vec2(0.5,0.5);
         if(length(relative_point)>0.5)
-            FragColor=vec4(0.0118, 0.0118, 0.0118, 0.0);
+            {
+                discard;
+                FragColor=vec4(0.0118, 0.0118, 0.0118, 0.0);
+            }
         else
             FragColor=vec4(0.0627, 0.851, 0.9059, 1.0);
             return ;
@@ -42,7 +45,10 @@ void main(){
     int ax=AxisMap(coord.x),ay=AxisMap(coord.y);
     if(ax==0&&ay==0)
         // O
-        FragColor=vec4(0,0,0,1);
+        {
+            //discard;
+            FragColor=vec4(0,0,0,1);
+        }
     else if (ay==0)
         // X  axis
         FragColor=vec4(1,0,0,1);

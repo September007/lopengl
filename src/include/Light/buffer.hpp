@@ -51,6 +51,8 @@ namespace Light
 			return m_normalized;
 		}
 
+		auto getName()const{return m_name;}
+
 	private:
 		ShaderDataType m_type;
 		std::string m_name;

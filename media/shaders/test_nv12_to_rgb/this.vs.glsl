@@ -8,9 +8,16 @@
 #define out_varing  out
 #endif
 layout_location(0) vec3 aPos;
-//layout(location=1)in vec3 aCol;
 layout_location(3) vec2 aTexCoord;
+//layout(location=1)in vec3 aCol;
 layout_location(5)float aChooseTex;
+
+
+// layout_location(0) vec2 aTexCoord;
+// layout_location(2) vec3 aPos;
+// //layout(location=1)in vec3 aCol;
+// layout_location(5)float aChooseTex;
+
 out_varing vec4 color;
 out_varing vec2 texCoord;
 out_varing float ChooseTex;

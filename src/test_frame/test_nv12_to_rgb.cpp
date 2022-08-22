@@ -7,7 +7,6 @@
 #include <map>
 #include <memory>
 
-
 using glm::mat4;
 using glm::min;
 using glm::radians;
@@ -15,7 +14,7 @@ using glm::rotate;
 using glm::vec3;
 
 // primitive attribute, this will be trans into shader for distinguising current-handling primitive
-#define PRIMITIVE_NONE  0
+#define PRIMITIVE_NONE 0
 #define PRIMITIVE_CIRCLE_POINT 1
 #define PRIMITIVE_LINE 2
 
@@ -23,29 +22,28 @@ constexpr int screenWidth = 800, screenHeight = 600;
 
 CameraWithController camera(screenWidth, screenHeight);
 
-void mouseCallback(GLFWwindow* window, double xpos, double ypos)
+void mouseCallback(GLFWwindow *window, double xpos, double ypos)
 {
 	camera.mouseCallback(xpos, ypos);
 }
-void scrollCallback(GLFWwindow* window, double offsetX, double offsetY)
+void scrollCallback(GLFWwindow *window, double offsetX, double offsetY)
 {
 	camera.scrollCallback(offsetX, offsetY);
 }
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	camera.framebuffer_size_callback(window, width, height);
 	glViewport(0, 0, width, height);
 }
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow *window)
 {
 	camera.processInput(window);
 }
 
 int tmain()
 {
-	{// set camera position
+	{ // set camera position
 		camera.cameraPos = vec3(0, 0, 2);
-
 	}
 
 	glfwInit();
@@ -62,7 +60,7 @@ int tmain()
 		glfwTerminate();
 		return -1;
 	}
-	
+
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	Light::OpenGLContext gl_context(window);
@@ -73,9 +71,9 @@ int tmain()
 	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetScrollCallback(window, scrollCallback);
 	// shader && program
-	ShaderObject vs = { GL_VERTEX_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.vs.glsl") };
-	ShaderObject fs = { GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.fs.glsl") };
-	ShaderObject draw_line_fs = { GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/draw_axiss.fs.glsl") };
+	ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.vs.glsl")};
+	ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.fs.glsl")};
+	ShaderObject draw_line_fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/draw_axiss.fs.glsl")};
 
 	ProgramObject program = Helper::CreateProgram(vs, fs);
 	ProgramObject draw_line_program = Helper::CreateProgram(vs, draw_line_fs);
@@ -90,8 +88,9 @@ int tmain()
 
 	GL_ERROR_STOP();
 
-	auto intAsFloat = [](int32_t i) {
-		float ret = *reinterpret_cast<float*>(&i);
+	auto intAsFloat = [](int32_t i)
+	{
+		float ret = *reinterpret_cast<float *>(&i);
 		return ret;
 	};
 	constexpr auto __L = 1.f, __R = -1.f;
@@ -100,6 +99,7 @@ int tmain()
 	constexpr auto _L1 = -0.8f, _R1 = 0.0f, _B1 = -0.2f, _T1 = -_B1;
 	constexpr auto _L2 = -0.0f, _R2 = 0.8f, _B2 = -0.2f, _T2 = -_B2;
 	// position : 3     color : 2       primitive : 1
+	// clang-format off
 	float vertices[] = {
 		_L1, _B1, _D, __L, __L,PRIMITIVE_NONE,
 		_R1, _B1, _D, __R, __L,PRIMITIVE_NONE,
@@ -127,13 +127,14 @@ int tmain()
 		4, 6, 7,    //right triangle two
 		8,9,8,10
 	};
-	GLuint VBO, VAO, EBO;
+	//clang-format on
+	
 	auto texture_BOL = Light::BufferLayout({
-		Light::BufferElement(Light::ShaderDataType::Float3,"Pos",false),
-		 Light::BufferElement(Light::ShaderDataType::Float3,"aTexCoord",false),
-		 Light::BufferElement(Light::ShaderDataType::Float3,"aColor",false) 
+		Light::BufferElement(Light::ShaderDataType::Float3,"Pos",false)
+		 ,Light::BufferElement(Light::ShaderDataType::Float2,"aTexCoord",false)
+		 ,Light::BufferElement(Light::ShaderDataType::Float,"aChooseTex",false) 
 		});
-    auto texture_AO=std::make_shared< Light::OpenGLVertexArray>();
+    auto texture_AO=std::make_shared<Light::OpenGLVertexArray>();
 	auto texture_BO =std::make_shared<Light::OpenGLVertexBuffer>(vertices, sizeof(vertices));
 	auto texture_EO =std::make_shared<Light::OpenGLIndexBuffer>(indices, sizeof(indices));
 	texture_BO->create(vertices,sizeof(vertices));
@@ -141,45 +142,16 @@ int tmain()
 	texture_EO->create(indices,sizeof(indices)/sizeof(float));
 
 	texture_AO->addVertexBuffer(texture_BO);
-
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-	// 1. 绑定VAO//
-	glBindVertexArray(VAO);
-	// 2. 把顶点数组复制到缓冲中供OpenGL使用 //
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	auto attribitues = getAttributes(program.getProgram());
-	// 3. 设置顶点属性指针 //
-	_ASSERT(attribitues.find("aPos") != attribitues.end());
-	_ASSERT(attribitues.find("aTexCoord") != attribitues.end());
-	int strip = 6;
-	glVertexAttribPointer(attribitues["aPos"].position, 3, GL_FLOAT, GL_FALSE, strip * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(attribitues["aPos"].position);
-	glVertexAttribPointer(attribitues["aTexCoord"].position, 2, GL_FLOAT, GL_FALSE, strip * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(attribitues["aTexCoord"].position);
-	//glVertexAttribPointer(attribitues["aChooseTex"].position, 1, GL_FLOAT, GL_FALSE, strip * sizeof(float), (void *)(5 * sizeof(float)));
-	//glEnableVertexAttribArray(attribitues["aChooseTex"].position);
-
-	// 4. 绑定 EBO //
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
+	texture_AO->setIndexBuffer(texture_EO);
+	
 	auto uniforms = program.getUniforms();
 	auto attributes = program.getAttributes();
 	GL_ERROR_STOP();
 	// the follow two all work
 	glUseProgram(program.getProgram());
 	// glUniform1i(glGetUniformLocation(program.getProgram(),"ourTexture1"),0);
-	GL_ERROR_STOP();
 	program.setInt("ourTexture2", 1);
 	program.setInt("ourTexture1", 0);
-	GL_ERROR_STOP();
 	std::map<int, int> frame_record;
 	frame_record[-1] = 0;
 
@@ -216,9 +188,7 @@ int tmain()
 		glUniformMatrix4fv(model_loc, 1, GL_FALSE, value_ptr(model));
 		glUniformMatrix4fv(view_loc, 1, GL_FALSE, value_ptr(view));
 		glUniformMatrix4fv(proj_loc, 1, GL_FALSE, value_ptr(projection));
-		GL_ERROR_STOP();
-
-		glBindVertexArray(VAO);
+		texture_AO->bind();
 		// left rectangle
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 3 + (GLuint*)0);
@@ -243,7 +213,9 @@ int tmain()
 		glUniformMatrix4fv(d_uniforms["model"].position, 1, GL_FALSE, value_ptr(model));
 		glUniformMatrix4fv(d_uniforms["view"].position, 1, GL_FALSE, value_ptr(view));
 		glUniformMatrix4fv(d_uniforms["projection"].position, 1, GL_FALSE, value_ptr(projection));
-		glBindVertexArray(VAO);
+
+		texture_AO->bind();
+
 		glLineWidth(10);
 		// X-axis + Y-axis
 		glUniform1i(d_uniforms["primitive_id"].position, PRIMITIVE_LINE);
@@ -254,7 +226,7 @@ int tmain()
 		glDrawElements(GL_POINTS, 3, GL_UNSIGNED_INT, 13 + (GLuint*)0);
 
 		GL_ERROR_STOP();
-
+		
 		gl_context.swapBuffers();
 	}
 	return 0;

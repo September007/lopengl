@@ -3,7 +3,7 @@
 
 #include <buffer.hpp>
 #include <context.hpp>
-
+#include <GLFW/glfw3.h>
 template <bool strict_ = STRICT_>
 struct ShaderObject
 {
@@ -135,6 +135,18 @@ struct ProgramObject
     int getUniformLocation(const std::string &name)
     {
         return glGetUniformLocation(getProgram(), name.c_str());
+    }
+    // this is compaticable of Light::Objects
+
+    //use this for location binding
+    void prepareVBO( Light::VertexBuffer &vbo){
+        auto layout=vbo.getLayout();
+        std::vector<std::pair<std::string, GLint>> locas;
+        int pos=0;
+        for(auto &e:layout){
+            locas.emplace_back(e.getName(),pos++);
+        }
+        bindAttributesLocations(getProgram(),locas);
     }
 };
 

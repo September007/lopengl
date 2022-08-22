@@ -22,6 +22,8 @@
         <<__LINE__<<std::endl<<(msg)<<std::endl;\
         throw std::runtime_error(msg);}while(0)
 
+
+
 template <bool strict_ = STRICT_>
 inline auto readFile(const std::string &f) -> std::string
 {
