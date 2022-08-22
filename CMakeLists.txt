@@ -20,7 +20,7 @@ endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
 # dependencies of glew, glfw, glad
 add_subdirectory("extern/glew-2.1.0/build/cmake")
-# add_subdirectory("extern/glfw-3.0.4")
+ add_subdirectory("extern/glfw-3.3.8")
 add_subdirectory("extern/googletest")
 #add_subdirectory("src/test_frame")
 include("src/test_frame/CMakeLists.txt")
@@ -41,7 +41,7 @@ include_directories(${extern_include_dirs})
 include_directories(
   "extern/googletest/googletest/include"
   )
-link_directories("extern/imgui/examples/libs/glfw/lib-vc2010-64")
+  
 
 
 find_package(OpenGL)
@@ -50,7 +50,7 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 
 if(WIN32)
-  set(COMMON_LIBS   glew E:/CODE/lopengl/extern/imgui/examples/libs/glfw/lib-vc2010-64/glfw3.lib legacy_stdio_definitions.lib opengl32.lib )
+  set(COMMON_LIBS   glew glfw legacy_stdio_definitions.lib opengl32.lib )
 elseif(UNIX)
   find_package(PkgConfig REQUIRED)
   set(COMMON_LIBS glew glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL rt dl)
