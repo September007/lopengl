@@ -91,7 +91,6 @@ void processInput(GLFWwindow *window)
 }
 int main()
 {
-    constexpr char *p = __FILE__;
     glfwInit();
 
     glfwWindowHint(GL_SAMPLES, 8);

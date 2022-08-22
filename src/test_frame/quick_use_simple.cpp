@@ -20,12 +20,13 @@ TEST(l, r)
 
 	glViewport(0, 0, window_width, window_height);
 
+	// clang-format off
 	ProgramObject program = Helper::CreateProgram(
 		ShaderObject(GL_VERTEX_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.vs.glsl")),
-		ShaderObject(GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.fs.glsl")));
+		ShaderObject(GL_FRAGMENT_SHADER, readFile("../media/shaders/" + getSrcFileNameOnlyName(__FILE__) + "/this.fs.glsl"))
+		);
 
-	// clang-format off
-	constexpr float L=0.8,R=-0.8;
+	constexpr float L=0.8,R=-L;
 	constexpr float TL=0,TR=1;
 
 	float vertices[]={

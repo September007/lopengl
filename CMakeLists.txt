@@ -20,15 +20,17 @@ endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
 # dependencies of glew, glfw, glad
 add_subdirectory("extern/glew-2.1.0/build/cmake")
-add_subdirectory("extern/glfw-3.0.4")
+# add_subdirectory("extern/glfw-3.0.4")
 add_subdirectory("extern/googletest")
 #add_subdirectory("src/test_frame")
 include("src/test_frame/CMakeLists.txt")
 set(extern_include_dirs 
+  "extern/imgui/examples/libs/glfw/include"
   "extern/glad/include"
   "extern/glew-2.1.0/include"
-  "extern/glfw-3.0.4/include"
+  # "extern/glfw-3.0.4/include"
   "extern/googletest/googletest/include"
+  "extern/imgui"
   "src/include"
   # write include dir here , will cause all the target binding this include_dir
   # this is only for the vscode intellisense to judge include dirs
@@ -39,6 +41,8 @@ include_directories(${extern_include_dirs})
 include_directories(
   "extern/googletest/googletest/include"
   )
+link_directories("extern/imgui/examples/libs/glfw/lib-vc2010-64")
+
 
 find_package(OpenGL)
 
@@ -46,7 +50,7 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 
 if(WIN32)
-  set(COMMON_LIBS   glew glfw legacy_stdio_definitions.lib opengl32.lib )
+  set(COMMON_LIBS   glew E:/CODE/lopengl/extern/imgui/examples/libs/glfw/lib-vc2010-64/glfw3.lib legacy_stdio_definitions.lib opengl32.lib )
 elseif(UNIX)
   find_package(PkgConfig REQUIRED)
   set(COMMON_LIBS glew glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL rt dl)
@@ -59,8 +63,6 @@ file(GLOB_RECURSE lazy_srcs "src/**.cpp")
 set(ACTIVED_CHP ch03 ch00 test_frame)
 # excluding target
 set(exclude_target test_main)
-
-
 set(EXES )
 foreach(src ${lazy_srcs})
     STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${src})
@@ -71,8 +73,14 @@ foreach(src ${lazy_srcs})
     list(APPEND EXES ${FILE_NAME})
 endforeach(src ${lazy_srcs})
 
-
-
+file(GLOB img_srcs "extern/imgui/*.cpp")
+list(APPEND img_srcs 
+"extern/imgui/backends/imgui_impl_glfw.cpp"
+"extern/imgui/backends/imgui_impl_opengl3.cpp"
+)
+set_property(SOURCE test_frame_app APPEND PROPERTY srcFile 
+${img_srcs}
+)
 set_property(SOURCE "34.PriorGL-frameBuffer" PROPERTY shaderDeps 1)
 # add executable object 
 # properties  : specification
