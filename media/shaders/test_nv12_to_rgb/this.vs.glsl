@@ -1,13 +1,20 @@
-#version 330 core
+#version 120
 
-layout(location=0)in vec3 aPos;
+#if __VERSION__==120
+#define layout_location(p) attribute
+#define out_varing  varying
+#else
+#define layout_location(p) layout(location=p)
+#define out_varing  out
+#endif
+layout_location(0) vec3 aPos;
 //layout(location=1)in vec3 aCol;
-layout(location=2)in vec2 aTexCoord;
-layout(location=5)in float aChooseTex;
-out vec4 color;
-out vec2 texCoord;
-out float ChooseTex;
-out vec3 Pos;
+layout_location(3) vec2 aTexCoord;
+layout_location(5)float aChooseTex;
+out_varing vec4 color;
+out_varing vec2 texCoord;
+out_varing float ChooseTex;
+out_varing vec3 Pos;
 
 uniform mat4 model;
 uniform mat4 view;

@@ -5,7 +5,8 @@
 #include <helper/OpenGL_Utils.h>
 #include <helper/OpenGL_Objects.h>
 #include <map>
-#include <Light/buffer.hpp>
+#include <memory>
+
 
 using glm::mat4;
 using glm::min;
@@ -61,14 +62,12 @@ int tmain()
 		glfwTerminate();
 		return -1;
 	}
-
+	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwMakeContextCurrent(window);
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "glad load failed" << std::endl;
-		return -1;
-	}
+
+	Light::OpenGLContext gl_context(window);
+	gl_context.init();
+
 	glViewport(0, 0, screenWidth, screenHeight);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouseCallback);
@@ -134,10 +133,14 @@ int tmain()
 		 Light::BufferElement(Light::ShaderDataType::Float3,"aTexCoord",false),
 		 Light::BufferElement(Light::ShaderDataType::Float3,"aColor",false) 
 		});
-    auto texture_AO=Light::OpenGLVertexArray();
-	auto texture_BO = Light::OpenGLVertexBuffer(vertices, sizeof(vertices));
-	auto texture_EO = Light::OpenGLIndexBuffer(indices, sizeof(indices));
-	texture_BO.setLayout(texture_BOL);
+    auto texture_AO=std::make_shared< Light::OpenGLVertexArray>();
+	auto texture_BO =std::make_shared<Light::OpenGLVertexBuffer>(vertices, sizeof(vertices));
+	auto texture_EO =std::make_shared<Light::OpenGLIndexBuffer>(indices, sizeof(indices));
+	texture_BO->create(vertices,sizeof(vertices));
+	texture_BO->setLayout(texture_BOL);
+	texture_EO->create(indices,sizeof(indices)/sizeof(float));
+
+	texture_AO->addVertexBuffer(texture_BO);
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -252,8 +255,7 @@ int tmain()
 
 		GL_ERROR_STOP();
 
-
-		glfwSwapBuffers(window);
+		gl_context.swapBuffers();
 	}
 	return 0;
 }

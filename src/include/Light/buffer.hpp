@@ -232,6 +232,19 @@ namespace Light
 
 namespace Light
 {
+	class GraphicsContext
+	{
+	public:
+		GraphicsContext() = default;
+		virtual ~GraphicsContext() = default;
+
+		virtual void init() = 0;
+		virtual void swapBuffers() = 0;
+	};
+}
+
+namespace Light
+{
 	class OpenGLVertexArray : public VertexArray
 	{
 	public:
@@ -257,3 +270,22 @@ namespace Light
 }
 
 
+#include <utility>
+
+struct GLFWwindow;
+
+namespace Light
+{
+	class OpenGLContext : public GraphicsContext
+	{
+	public:
+		OpenGLContext(GLFWwindow* windowHandle);
+		~OpenGLContext();
+
+		void init() override;
+		void swapBuffers() override;
+
+	private:
+		GLFWwindow* m_windowHandle;
+	};
+}

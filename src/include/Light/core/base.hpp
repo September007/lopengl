@@ -1,6 +1,8 @@
+#pragma once
 #ifndef __BASE_H__
 #define __BASE_H__
 
+#include <memory.h>
 #include <memory>
 #include <functional>
 #include <string>
@@ -60,6 +62,38 @@
 #include "glm/gtx/string_cast.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define LIGHT_CORE_WARN(...)
-#define LIGHT_CORE_ERROR(...)
+#if 0
+	#define LIGHT_CORE_TRACE(...)		Light::Logger::getCoreLogger()->trace(__VA_ARGS__)
+	#define LIGHT_CORE_DEBUG(...)		Light::Logger::getCoreLogger()->debug(__VA_ARGS__)
+	#define LIGHT_CORE_INFO(...)		Light::Logger::getCoreLogger()->info(__VA_ARGS__)
+	#define LIGHT_CORE_WARN(...)		Light::Logger::getCoreLogger()->warn(__VA_ARGS__)
+	#define LIGHT_CORE_ERROR(...)		Light::Logger::getCoreLogger()->error(_LIGHT_FILE() + ":"\
+											_LIGHT_STRINGIFY_MACRO(__LINE__) "::" __VA_ARGS__)
+	#define LIGHT_CORE_CRITICAL(...)	Light::Logger::getCoreLogger()->critical(_LIGHT_FILE() + ":"\
+											_LIGHT_STRINGIFY_MACRO(__LINE__) "::" __VA_ARGS__)
+
+	#define LIGHT_TRACE(...)			Light::Logger::getClientLogger()->trace(__VA_ARGS__)
+	#define LIGHT_DEBUG(...)			Light::Logger::getClientLogger()->debug(__VA_ARGS__)
+	#define LIGHT_INFO(...)				Light::Logger::getClientLogger()->info(__VA_ARGS__)
+	#define LIGHT_WARN(...)				Light::Logger::getClientLogger()->warn(__VA_ARGS__)
+	#define LIGHT_ERROR(...)			Light::Logger::getClientLogger()->error(_LIGHT_FILE() + ":"\
+											_LIGHT_STRINGIFY_MACRO(__LINE__) "::" __VA_ARGS__)
+	#define LIGHT_CRITICAL(...)			Light::Logger::getClientLogger()->critical(_LIGHT_FILE() + ":"\
+											_LIGHT_STRINGIFY_MACRO(__LINE__) "::" __VA_ARGS__)
+#else	
+	#define cerr_out(...)		std::cerr<<(__VA_ARGS__)<<std::endl
+	#define LIGHT_CORE_TRACE(...)		cerr_out(__VA_ARGS__)			
+	#define LIGHT_CORE_DEBUG(...)		cerr_out(__VA_ARGS__)
+	#define LIGHT_CORE_INFO(...)		cerr_out(__VA_ARGS__)
+	#define LIGHT_CORE_WARN(...)		cerr_out(__VA_ARGS__)
+	#define LIGHT_CORE_ERROR(...)		cerr_out(__VA_ARGS__)
+	#define LIGHT_CORE_CRITICAL(...)	cerr_out(__VA_ARGS__)
+
+	#define LIGHT_TRACE(...)		cerr_out(__VA_ARGS__)		
+	#define LIGHT_DEBUG(...)		cerr_out(__VA_ARGS__)
+	#define LIGHT_INFO(...)			cerr_out(__VA_ARGS__)
+	#define LIGHT_WARN(...)			cerr_out(__VA_ARGS__)
+	#define LIGHT_ERROR(...)		cerr_out(__VA_ARGS__)
+	#define LIGHT_CRITICAL(...)		cerr_out(__VA_ARGS__)
+#endif
 #endif // __BASE_H__
