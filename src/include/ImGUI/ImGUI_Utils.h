@@ -113,7 +113,7 @@ namespace {
 // note if type T is qualified to be wrapped,
 // it need implement GetAllAttr() ,see Example_Group_Type
 template<typename T>
-requires std::is_class_v<T>
+requires std::is_class_v<std::remove_reference_t<T>>
 struct Universal_Group_Wrapper{
     using ValueType=T;
     T data;
@@ -174,3 +174,4 @@ inline void Draw_element(T &t)
         Draw_tuple_element(attrs);
     }
 }
+

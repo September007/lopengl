@@ -13,14 +13,15 @@ Universal_Type_Wrapper<float &> wf("wrapped float", std::ref(unwrapped_f), 1, 1,
 
 struct test_Group_Type
 {
-	Universal_Type_Wrapper<int> ui={"inside test int", 1, 1, 99, 10};
-	Universal_Type_Wrapper<float> uf={"inside test float", 1, 1, 99};
-	auto GetAllAttr(){
-		return std::tie(ui,uf);
+	Universal_Type_Wrapper<int> ui = {"inside test int", 1, 1, 99, 10};
+	Universal_Type_Wrapper<float> uf = {"inside test float", 1, 1, 99};
+	auto GetAllAttr()
+	{
+		return std::tie(ui, uf);
 	}
-}g_t;
-Universal_Group_Wrapper w_g_t("grouped attributes",g_t);
- static void glfw_error_callback(int error, const char *description)
+} g_t;
+Universal_Group_Wrapper<test_Group_Type&> w_g_t("grouped attributes", g_t);
+static void glfw_error_callback(int error, const char *description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
@@ -141,27 +142,27 @@ int tmain()
 			0,
 		};
 		Begin("test");
-		if (ImGui::CollapsingHeader(":test header"))
+		BeginTabBar("Sad");
+		if (BeginTabItem("b"))
 		{
-			BeginTabBar("Sad");
-			if (BeginTabItem("b"))
-			{
-				using UT = decltype(ui);
-				using T = UT::ValueType;
-				using DT = UT::DT;
-				constexpr bool x = std::is_same_v<DT, int>;
-				auto constexpr xx = Visible_Attr_Type<UT>;
-				static_assert(x);
-				Draw_element(ui);
-				Draw_element(uf);
-				Draw_element(wi);
-				Draw_element(wf);
-				Draw_element(w_g_t);
+			using UT = decltype(ui);
+			using T = UT::ValueType;
+			using DT = UT::DT;
+			constexpr bool x = std::is_same_v<DT, int>;
+			auto constexpr xx = Visible_Attr_Type<UT>;
+			auto constexpr xsx = Qualified_Be_Wrapped<test_Group_Type>;
+			auto constexpr xssx = std::is_class_v<test_Group_Type&>;
 
-				EndTabItem();
-			}
-			EndTabBar();
+			static_assert(x);
+			Draw_element(ui);
+			Draw_element(uf);
+			Draw_element(wi);
+			Draw_element(wf);
+			Draw_element(w_g_t);
+
+			EndTabItem();
 		}
+		EndTabBar();
 		End();
 		// 3. Show another simple window.
 		if (show_another_window)
@@ -176,7 +177,7 @@ int tmain()
 		ImGui::Render();
 		int display_w, display_h;
 		glfwGetFramebufferSize(window, &display_w, &display_h);
-		glViewport(0, 0, display_w / 2, display_h / 2);
+		glViewport(0, 0, display_w, display_h);
 		glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
