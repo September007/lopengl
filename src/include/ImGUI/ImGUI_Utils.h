@@ -101,8 +101,17 @@ requires( std::integral<std::remove_reference_t<T>>||
            static_assert(!std::is_same_v<T,T>,"Unsupport Type");
     }
 };
+namespace {
+    struct Example_Group_Type{
+        Universal_Type_Wrapper<int> i;
+        Universal_Type_Wrapper<float> f;
+        auto GetAllAttr(){
+            return std::tie(i,f);
+        }
+    };
+}
 // note if type T is qualified to be wrapped,
-// it need implement GetAllAttr() 
+// it need implement GetAllAttr() ,see Example_Group_Type
 template<typename T>
 requires std::is_class_v<T>
 struct Universal_Group_Wrapper{
@@ -111,11 +120,11 @@ struct Universal_Group_Wrapper{
     std::string name;
     ImGuiTreeNodeFlags_ flag;
     Universal_Group_Wrapper(const std::string&name,T data,
-    ImGuiTreeNodeFlags_ flag=ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen|ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen):
+    ImGuiTreeNodeFlags_ flag=ImGuiTreeNodeFlags_(ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen|ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)):
     name(name),data(data),flag(flag){}
     auto GetName() { return name; }
     auto GetFlag(){ return flag; }
-    auto GetAllAttr()->decltype( data.GetAttr()){
+    auto GetAllAttr(){
         return data.GetAllAttr();
     }
 };
@@ -123,7 +132,7 @@ struct Universal_Group_Wrapper{
 template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
 inline void Draw_element(T &t)
 {
-    using RRT=std::remove_reference_t<typename T::ValueType>;
+    using RRT = std::remove_reference_t<typename T::ValueType>;
     auto &data = t.data;
     if constexpr (std::is_same_v<RRT, float>)
     {
@@ -132,24 +141,36 @@ inline void Draw_element(T &t)
     else if constexpr (std::is_same_v<RRT, int>)
     {
         ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
-    }else if constexpr(std::is_same_v<T,T>){
-           static_assert(!std::is_same_v<T,T>,"Unsupport Type");
+    }
+    else if constexpr (std::is_same_v<T, T>)
+    {
+        static_assert(!std::is_same_v<T, T>, "Unsupport Type");
     }
 };
-namespace {
-    template <typename ... restAttrs>
-    inline void Draw_tuple_element(std::tuple<restAttrs...>&rest)
+namespace
+{
+    template <typename tupleT, int index = 0>
+    inline void Draw_tuple_element(tupleT &attrs)
     {
-        
+        if constexpr (index == std::tuple_size_v<tupleT>)
+            return;
+        else
+        {
+            Draw_element(std::get<index>(attrs));
+            Draw_tuple_element<tupleT, index + 1>(attrs);
+        }
     }
 }
 template <Visible_Attr_Group_Type T>
 inline void Draw_element(T &t)
 {
+    static_assert(Qualified_Be_Wrapped<Example_Group_Type>,
+                  "Example_Group_Type shoudl be qualified as Visible_Attr_Group_Type");
+
     auto &data = t.data;
-    if (ImGui::CollapsingHeader(t.GetName(), t.GetFlag()))
+    if (ImGui::CollapsingHeader(t.GetName().c_str(), t.GetFlag()))
     {
-        auto &attrs=t.GetAttrs();
+        auto attrs = t.GetAllAttr();
         Draw_tuple_element(attrs);
     }
 }

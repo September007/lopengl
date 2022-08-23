@@ -8,9 +8,19 @@ Universal_Type_Wrapper<int> ui("test int", 1, 1, 99, 10);
 Universal_Type_Wrapper<float> uf("test float", 1, 1, 99);
 int unwrapped_i;
 float unwrapped_f;
-Universal_Type_Wrapper<int&> wi("wrapped int",std::ref( unwrapped_i),1,99);
-Universal_Type_Wrapper<float&> wf("wrapped float",std::ref( unwrapped_f),1,1,99);
-static void glfw_error_callback(int error, const char *description)
+Universal_Type_Wrapper<int &> wi("wrapped int", std::ref(unwrapped_i), 1, 99);
+Universal_Type_Wrapper<float &> wf("wrapped float", std::ref(unwrapped_f), 1, 1, 99);
+
+struct test_Group_Type
+{
+	Universal_Type_Wrapper<int> ui={"inside test int", 1, 1, 99, 10};
+	Universal_Type_Wrapper<float> uf={"inside test float", 1, 1, 99};
+	auto GetAllAttr(){
+		return std::tie(ui,uf);
+	}
+}g_t;
+Universal_Group_Wrapper w_g_t("grouped attributes",g_t);
+ static void glfw_error_callback(int error, const char *description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
@@ -136,16 +146,17 @@ int tmain()
 			BeginTabBar("Sad");
 			if (BeginTabItem("b"))
 			{
-				using UT=decltype(ui);
-				using T=UT::ValueType;
-				using DT=UT::DT;
-				constexpr bool x=std::is_same_v<DT,int>;
-				auto constexpr xx=Visible_Attr_Type<UT>;
+				using UT = decltype(ui);
+				using T = UT::ValueType;
+				using DT = UT::DT;
+				constexpr bool x = std::is_same_v<DT, int>;
+				auto constexpr xx = Visible_Attr_Type<UT>;
 				static_assert(x);
 				Draw_element(ui);
 				Draw_element(uf);
 				Draw_element(wi);
 				Draw_element(wf);
+				Draw_element(w_g_t);
 
 				EndTabItem();
 			}
