@@ -15,6 +15,7 @@
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
+using std::string;
 // clang-format off
 #include <concepts>
 #include <type_traits>
@@ -33,11 +34,11 @@ template <typename T>
 concept Visible_Attr_Type = requires(T t)
 {
     t.GetName();
-    t.GetMin();
-    t.GetMax();
-    t.GetSpeed();
-    t.GetFormat();
     t.GetFlag();
+    // t.GetMin();
+    // t.GetMax();
+    // t.GetSpeed();
+    // t.GetFormat();
 }
 &&std::same_as<std::string, decltype(std::declval<T>().GetName())>;
 
@@ -53,28 +54,43 @@ template<typename T>
 concept Qualified_Be_Wrapped=requires(T t){
     t.GetAllAttr();
 };
+
+template <typename T>
+struct Base_Type_Wrapper{
+    std::string name;
+    int flag;
+    T data;
+    Base_Type_Wrapper(const string&name,T data,int flag):name(name),flag(flag),data(data){}
+    auto GetName() { return name; }
+    auto GetFlag(){ return flag;}
+};
 // note:
 // if you declare T as non-reference,then this will hold data as itself
 // otherwise, the Universal_Type_Wrapper hold a reference to origin data
 template <typename T>
+ struct Universal_Type_Wrapper:public Base_Type_Wrapper<T>
+ {
+    Universal_Type_Wrapper(){
+        static_assert(std::is_same_v<T,T>, "this imple is not allowed");
+    }
+ };
+template <typename T>
 requires( std::integral<std::remove_reference_t<T>>||
           std::floating_point<std::remove_reference_t<T>>)
- struct Universal_Type_Wrapper
+ struct Universal_Type_Wrapper<T>:public Base_Type_Wrapper<T>
 {
     using ValueType=T;
     using DT=std::remove_reference_t<ValueType>;
     static constexpr float int_speed=0.0000001;
     static constexpr float float_speed=0.005;
     
-    std::string name;
-    T data;
     DT v_min,v_max;
     ImGuiSliderFlags_ flag;
     float speed;
+    
     Universal_Type_Wrapper(const std::string &name,  T data, DT v_min=std::numeric_limits<T>::min(), DT v_max=std::numeric_limits<T>::max(),float speed=GetDefaultSpeed() ,ImGuiSliderFlags_ flag=ImGuiSliderFlags_AlwaysClamp)
-     :name(name), data(data),v_min(v_min),v_max(v_max),flag(flag){};
+     :Base_Type_Wrapper(name,data,flag),v_min(v_min),v_max(v_max){};
 
-    auto GetName() { return name; }
    // dont need this
    // auto GetAttr() { return std::make_tuple(std::make_pair(name, &data)); }
     auto GetMin() { return v_min; }
@@ -89,7 +105,6 @@ requires( std::integral<std::remove_reference_t<T>>||
        else if constexpr (std::is_same_v<T,T>)
            static_assert(!std::is_same_v<T,T>,"Unsupport Type");
     }
-    auto GetFlag(){ return flag;}
 
    private:
     static auto constexpr GetDefaultSpeed(){
@@ -100,6 +115,15 @@ requires( std::integral<std::remove_reference_t<T>>||
        else if constexpr (std::is_same_v<T,T>)
            static_assert(!std::is_same_v<T,T>,"Unsupport Type");
     }
+};
+template <typename T>
+requires(std::is_same_v<string,std::remove_reference_t<T>>)
+ struct Universal_Type_Wrapper<T>:public Base_Type_Wrapper<T>
+{
+    using ValueType=T;
+    using DT=std::remove_reference_t<ValueType>;
+    Universal_Type_Wrapper(const string &name,T data,int flag=ImGuiInputTextFlags_AllowTabInput)
+    :Base_Type_Wrapper<T>(name,data,flag){}
 };
 namespace {
     struct Example_Group_Type{
@@ -127,6 +151,7 @@ struct Universal_Group_Wrapper{
     auto GetAllAttr(){
         return data.GetAllAttr();
     }
+    // more customed attr
 };
 // clang-format on
 template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
@@ -141,6 +166,15 @@ inline void Draw_element(T &t)
     else if constexpr (std::is_same_v<RRT, int>)
     {
         ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
+    }
+    else if constexpr (std::is_same_v<RRT, std::string>)
+    {
+        int len=data.length(),temp_len=len*1.5+10;
+        string temp;
+        temp.reserve(temp_len);
+        temp=data;
+        ImGui::InputTextMultiline(t.GetName().c_str(),const_cast<char*>(temp.data()),temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16),t.GetFlag());
+        data=temp.data();
     }
     else if constexpr (std::is_same_v<T, T>)
     {

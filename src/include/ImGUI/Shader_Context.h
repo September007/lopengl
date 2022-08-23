@@ -64,5 +64,8 @@ class NV12_to_RGB : public I_Render_Task, Check_Render_Task_Completeness<NV12_to
     };
 
 private:
-    ~NV12_to_RGB(){};
+    ~NV12_to_RGB(){
+        string s;
+        s="";
+    };
 };

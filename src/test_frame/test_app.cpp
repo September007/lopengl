@@ -64,7 +64,14 @@ int tmain()
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 		if (show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
-
+		{
+			using T=Universal_Type_Wrapper<string>;
+			static Universal_Type_Wrapper<string> ws("test string","");
+			ImGui::Begin("test");
+			constexpr bool x=Visible_Attr_Type<T>;
+			Draw_element(ws);
+			ImGui::End();
+		}
 		// Rendering
 		ImGui::Render();
 		int display_w, display_h;
