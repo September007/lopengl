@@ -78,7 +78,7 @@ list(APPEND img_srcs
 "extern/imgui/backends/imgui_impl_glfw.cpp"
 "extern/imgui/backends/imgui_impl_opengl3.cpp"
 )
-set_property(SOURCE test_frame_app APPEND PROPERTY srcFile 
+set_property(SOURCE test_app APPEND PROPERTY srcFile 
 ${img_srcs}
 )
 set_property(SOURCE "34.PriorGL-frameBuffer" PROPERTY shaderDeps 1)
@@ -113,6 +113,7 @@ function(this_add_executable exe)
         target_include_directories(${exe} PUBLIC ${additionalIncludeDirs})
     endif()
 endfunction()
+
 
 foreach(exe ${EXES})
   this_add_executable(${exe})    
