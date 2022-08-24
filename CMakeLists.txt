@@ -24,12 +24,14 @@ endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 add_subdirectory("extern/glew-2.1.0/build/cmake")
  add_subdirectory("extern/glfw-3.3.8")
 add_subdirectory("extern/googletest")
+add_subdirectory("extern/fmt" EXCLUDE_FROM_ALL)
 #add_subdirectory("src/test_frame")
 include("src/test_frame/CMakeLists.txt")
 set(extern_include_dirs 
   "extern/imgui/examples/libs/glfw/include"
   "extern/glad/include"
   "extern/glew-2.1.0/include"
+  "extern/fmt/include"
   # "extern/glfw-3.0.4/include"
   "extern/googletest/googletest/include"
   "extern/imgui"
@@ -52,7 +54,7 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 
 if(WIN32)
-  set(COMMON_LIBS   glew glfw legacy_stdio_definitions.lib opengl32.lib )
+  set(COMMON_LIBS   glew glfw legacy_stdio_definitions.lib opengl32.lib  fmt::fmt-header-only)
 elseif(UNIX)
   find_package(PkgConfig REQUIRED)
   set(COMMON_LIBS glew glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL rt dl)

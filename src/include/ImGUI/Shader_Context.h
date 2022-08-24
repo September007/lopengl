@@ -3,6 +3,7 @@
 #include <helper/OpenGL_Objects.h>
 #include <ImGUI/ImGUI_Utils.h>
 
+#include <fmt/format.h>
 using std::string;
 /*******************************************************************/
 /************** automatocally set program uniforms by Wrapper ****/
@@ -137,19 +138,26 @@ public:
     try
     {
         for (auto &task : tasks)
-        try{
-            task->PrepareExecutingParameters();
-            task->Execute();
-        }
-        catch(std::exception&e){
-            std::cerr<<std::endl;
-        }
+            try
+            {
+                task->PrepareExecutingParameters();
+                task->Execute();
+            }
+            catch (std::exception &e)
+            {
+                std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
+            }
         if (ImGui::Begin("hot config"))
         {
             for (auto &task : tasks)
-            {
-                task->ShowConfig();
-            }
+                try
+                {
+                    task->ShowConfig();
+                }
+                catch (std::exception &e)
+                {
+                    std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
+                }
         }
         ImGui::End();
     }

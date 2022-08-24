@@ -18,7 +18,7 @@
 #define STRICT_ true
 
 #include <iostream>
-#define report_error(msg) do{std::cerr<<"at "<<__FILE__<<":"\
+#define rreport_error(msg) do{std::cerr<<"at "<<__FILE__<<":"\
         <<__LINE__<<std::endl<<(msg)<<std::endl;\
         throw std::runtime_error(msg);}while(0)
 
@@ -89,7 +89,7 @@ inline int error;
     {                                                 \
         error = glGetError();                         \
         if (error != 0)                               \
-            report_error("gl get error: "+std::to_string(error)); \
+            rreport_error("gl get error: "+std::to_string(error)); \
     }
 // \ret
 // ret==0: success

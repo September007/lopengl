@@ -14,7 +14,7 @@
 #include <type_traits>
 
 #include <iostream>
-#define report_error(msg) do{std::cerr<<"at "<<__FILE__<<" "\
+#define rreport_error(msg) do{std::cerr<<"at "<<__FILE__<<" "\
         <<__LINE__<<std::endl<<(msg)<<std::endl;\
         throw std::runtime_error(msg);}while(0)
 #define STRICT_ true
@@ -98,7 +98,7 @@ inline int error;
     {                                                 \
         error = glGetError();                         \
         if (error != 0)                               \
-           report_error(std::string("GL_ERROR_STOP")+std::to_string(__LINE__)); \
+           rreport_error(std::string("GL_ERROR_STOP")+std::to_string(__LINE__)); \
     }
 // \ret
 // ret==0: success
@@ -157,7 +157,7 @@ struct ShaderObject
             tempInfo = {infoLog, infoLog + len};
             if constexpr (strict_)
             {
-                report_error(tempInfo);//throw std::runtime_error("shader compile failed:\n\t" + tempInfo);
+                rreport_error(tempInfo);//throw std::runtime_error("shader compile failed:\n\t" + tempInfo);
             }
         }
     }
@@ -207,7 +207,7 @@ struct ProgramObject
         auto ret = getInfo(GL_LINK_STATUS);
         if constexpr (strict_)
             if (ret != GL_TRUE)
-                report_error("program link failed:\n\t" + tempInfo);//throw std::runtime_error("program link failed:\n\t" + tempInfo);
+                rreport_error("program link failed:\n\t" + tempInfo);//throw std::runtime_error("program link failed:\n\t" + tempInfo);
     }
     GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
