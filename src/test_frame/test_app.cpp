@@ -75,7 +75,12 @@ int tmain()
 		// Shader Tasks Prepare and execute
 		// cc.Tick();
 		auto t = dynamic_cast<Test_Render_Task *>(cc.tasks[0].get());
-		switch (0)
+		static int p = 0;
+		const char *items[] = {"Tick", "UnWrapped Tick", "unWrapped Progress"};
+		//if (ImGui::Begin("hot config"))
+			ImGui::Combo("choose path", &p, items, sizeof(items) / sizeof(*items));
+		//ImGui::End();
+		switch (p)
 		{
 		case 0:
 			cc.Tick();
@@ -83,7 +88,7 @@ int tmain()
 		case 1:
 			t->PrepareExecutingParameters();
 			t->Execute();
-			t->ShowConfig();
+			cc.ShowConfig();
 			break;
 		case 2:
 			auto &vao = t->vao;
@@ -96,7 +101,7 @@ int tmain()
 			program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
 											ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
 			program.use();
-			std::tie(vao, vbo, veo) = simpleV_ABE_O<3>();
+			std::tie(vao, vbo, veo) = simpleV_ABE_O<3>(params->shader_params->VL.data,params->shader_params->VR.data);
 
 			Light::BufferLayout layout = {
 				Light::BufferElement(Light::ShaderDataType::Float3, "aPos", false),
@@ -106,6 +111,7 @@ int tmain()
 			glClearColor(0.2, 0.2, 0.0, 1);
 			program.setInt(params->shader_params->texturePath.GetName(), tex.targetTexture - GL_TEXTURE0);
 
+			GL_ERROR_STOP();
 			vbo->setLayout(layout);
 			vao->addVertexBuffer(vbo);
 			vao->setIndexBuffer(veo);
@@ -119,8 +125,7 @@ int tmain()
 
 			glUseProgram(0);
 
-			program.unuse();
-			t->ShowConfig();
+			cc.ShowConfig();
 		};
 
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
