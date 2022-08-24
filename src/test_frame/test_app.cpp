@@ -46,9 +46,15 @@ int tmain()
 
 	// Our state
 	bool show_demo_window = true;
-	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	CentralController cc;
+	cc.tasks.push_back(std::shared_ptr<NV12_to_RGB>(
+		new NV12_to_RGB("NV12_to_RGB",
+						readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
+						readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
+						&cc),
+		&I_Render_Task::I_Render_Task_Deleter));
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -60,18 +66,12 @@ int tmain()
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
+		// Shader Tasks Prepare and execute
+		cc.Tick();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 		if (show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
-		{
-			using T=Universal_Type_Wrapper<string>;
-			static Universal_Type_Wrapper<string> ws("test string","");
-			ImGui::Begin("test");
-			constexpr bool x=Visible_Attr_Type<T>;
-			Draw_element(ws);
-			ImGui::End();
-		}
+
 		// Rendering
 		ImGui::Render();
 		int display_w, display_h;
@@ -94,11 +94,11 @@ int tmain()
 	glfwTerminate();
 
 	return 0;
-
 }
 
 #include <gtest/gtest.h>
 
-TEST(test_app,main){
+TEST(test_app, main)
+{
 	tmain();
 }

@@ -81,7 +81,7 @@ requires( std::integral<std::remove_reference_t<T>>||
 {
     using ValueType=T;
     using DT=std::remove_reference_t<ValueType>;
-    static constexpr float int_speed=0.0000001;
+    static constexpr float int_speed=1.0f;
     static constexpr float float_speed=0.005;
     
     DT v_min,v_max;
@@ -89,7 +89,7 @@ requires( std::integral<std::remove_reference_t<T>>||
     float speed;
     
     Universal_Type_Wrapper(const std::string &name,  T data, DT v_min=std::numeric_limits<T>::min(), DT v_max=std::numeric_limits<T>::max(),float speed=GetDefaultSpeed() ,ImGuiSliderFlags_ flag=ImGuiSliderFlags_AlwaysClamp)
-     :Base_Type_Wrapper(name,data,flag),v_min(v_min),v_max(v_max){};
+     :Base_Type_Wrapper<T>(name,data,flag),v_min(v_min),v_max(v_max),speed(speed){};
 
    // dont need this
    // auto GetAttr() { return std::make_tuple(std::make_pair(name, &data)); }
@@ -99,9 +99,9 @@ requires( std::integral<std::remove_reference_t<T>>||
     auto GetFormat()
     {
         if constexpr (std::is_integral_v<DT>)
-            return "%lld";
+            return "%d";
         else if constexpr (std::is_floating_point_v<DT>)
-            return "%lf";
+            return "%.3ff";
        else if constexpr (std::is_same_v<T,T>)
            static_assert(!std::is_same_v<T,T>,"Unsupport Type");
     }
@@ -125,6 +125,8 @@ requires(std::is_same_v<string,std::remove_reference_t<T>>)
     Universal_Type_Wrapper(const string &name,T data,int flag=ImGuiInputTextFlags_AllowTabInput)
     :Base_Type_Wrapper<T>(name,data,flag){}
 };
+
+
 namespace {
     struct Example_Group_Type{
         Universal_Type_Wrapper<int> i;
@@ -134,6 +136,16 @@ namespace {
         }
     };
 }
+// show in checkbox
+template <>
+ struct Universal_Type_Wrapper<bool>:public Base_Type_Wrapper<bool>
+{
+    using ValueType=bool;
+    using DT=std::remove_reference_t<ValueType>;
+    Universal_Type_Wrapper(const string &name,bool data,int flag=ImGuiInputTextFlags_AllowTabInput)
+    :Base_Type_Wrapper<bool>(name,data,flag){}
+
+};
 // note if type T is qualified to be wrapped,
 // it need implement GetAllAttr() ,see Example_Group_Type
 template<typename T>
@@ -155,6 +167,7 @@ struct Universal_Group_Wrapper{
 };
 // clang-format on
 template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
+requires !Visible_Attr_Group_Type<T>
 inline void Draw_element(T &t)
 {
     using RRT = std::remove_reference_t<typename T::ValueType>;
@@ -165,7 +178,12 @@ inline void Draw_element(T &t)
     }
     else if constexpr (std::is_same_v<RRT, int>)
     {
-        ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
+       // ImGui::SliderInt(t.GetName().c_str(), &data, t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
+     ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
+    }
+    else if constexpr (std::is_same_v<RRT, bool>)
+    {
+        ImGui::Checkbox(t.GetName().c_str(),&t.data);
     }
     else if constexpr (std::is_same_v<RRT, std::string>)
     {
@@ -173,7 +191,9 @@ inline void Draw_element(T &t)
         string temp;
         temp.reserve(temp_len);
         temp=data;
-        ImGui::InputTextMultiline(t.GetName().c_str(),const_cast<char*>(temp.data()),temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16),t.GetFlag());
+        auto name_hints=t.GetName()+":";
+        ImGui::Text(name_hints.c_str());
+        ImGui::InputTextMultiline(t.GetName().c_str(),const_cast<char*>(temp.data()),temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 2),t.GetFlag());
         data=temp.data();
     }
     else if constexpr (std::is_same_v<T, T>)
@@ -196,7 +216,7 @@ namespace
     }
 }
 template <Visible_Attr_Group_Type T>
-inline void Draw_element(T &t)
+inline void Draw_element(T &t,std::function<void()> beforeAttr=nullptr)
 {
     static_assert(Qualified_Be_Wrapped<Example_Group_Type>,
                   "Example_Group_Type shoudl be qualified as Visible_Attr_Group_Type");
@@ -204,8 +224,12 @@ inline void Draw_element(T &t)
     auto &data = t.data;
     if (ImGui::CollapsingHeader(t.GetName().c_str(), t.GetFlag()))
     {
+        if(beforeAttr!=nullptr){
+            beforeAttr();
+        }
         auto attrs = t.GetAllAttr();
         Draw_tuple_element(attrs);
+        ImGui::Separator();
     }
 }
 

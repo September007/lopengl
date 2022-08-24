@@ -17,7 +17,9 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/lib)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/lib)
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
-
+###############################################################################################
+##################################  3rd dependencies  #########################################
+###############################################################################################
 # dependencies of glew, glfw, glad
 add_subdirectory("extern/glew-2.1.0/build/cmake")
  add_subdirectory("extern/glfw-3.3.8")
@@ -58,6 +60,22 @@ else()
 endif()
 
 
+###############################################################################################
+########################  common compiler setting  ############################################
+###############################################################################################
+
+if(MSVC)
+  add_compile_options( /W4 /WX)
+  target_compile_options(glew PUBLIC /W1)
+else()
+  add_compile_options(  -Wall -Wextra -pedantic -Werror)
+  target_compile_options(glew -W)
+endif()
+
+
+###############################################################################################
+##################################  targets  ##################################################
+###############################################################################################
 file(GLOB_RECURSE lazy_srcs "src/**.cpp")
 #  point out programs from which chp need be generate
 set(ACTIVED_CHP ch03 ch00 test_frame)
@@ -82,6 +100,7 @@ set_property(SOURCE test_app APPEND PROPERTY srcFile
 ${img_srcs}
 )
 set_property(SOURCE "34.PriorGL-frameBuffer" PROPERTY shaderDeps 1)
+set_property(SOURCE "test_app" PROPERTY shaderDeps 1)
 # add executable object 
 # properties  : specification
 # srcFile     : source file list
