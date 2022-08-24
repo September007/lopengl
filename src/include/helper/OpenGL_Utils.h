@@ -89,7 +89,7 @@ inline int error;
     {                                                 \
         error = glGetError();                         \
         if (error != 0)                               \
-            report_error("gl get error"); \
+            report_error("gl get error: "+std::to_string(error)); \
     }
 // \ret
 // ret==0: success

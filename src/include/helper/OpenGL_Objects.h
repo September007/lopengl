@@ -85,6 +85,8 @@ struct ProgramObject
             if (ret != GL_TRUE)
                 throw std::runtime_error("program link failed:\n\t" + tempInfo);
     }
+    void use(){glUseProgram(getProgram());}
+    void unuse(){glUseProgram(0);}
     GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
     {
@@ -193,9 +195,10 @@ class TextureObject
 {
 public:
     std::shared_ptr<GLuint> obj;
+    GLuint targetTexture;
     int width, height, nChannels;
     TextureObject() = delete;
-    TextureObject(GLuint obj_)
+    TextureObject(GLuint obj_,GLuint targetTex):targetTexture(targetTex)
     {
         obj.reset(new GLuint(obj_), [](GLuint *p)
                   {
@@ -210,6 +213,12 @@ public:
         height = h;
         nChannels = n;
     }
+    void bind(GLuint target){
+        GL_ERROR_STOP();
+        
+        //glBindTexture(target,*obj);
+        GL_ERROR_STOP();
+    }
 };
 namespace Helper
 {
@@ -223,7 +232,7 @@ namespace Helper
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        auto ret = TextureObject(texture);
+        auto ret = TextureObject(texture,textureTarget);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels - 3, width, height, 0, GL_RGB + nChannels - 3, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);

@@ -63,6 +63,9 @@ struct Base_Type_Wrapper{
     Base_Type_Wrapper(const string&name,T data,int flag):name(name),flag(flag),data(data){}
     auto GetName() { return name; }
     auto GetFlag(){ return flag;}
+    std::remove_reference_t<T>* operator->(){
+        return &data;
+    }
 };
 // note:
 // if you declare T as non-reference,then this will hold data as itself
@@ -162,6 +165,9 @@ struct Universal_Group_Wrapper{
     auto GetFlag(){ return flag; }
     auto GetAllAttr(){
         return data.GetAllAttr();
+    }
+    std::remove_reference_t<T>* operator->(){
+        return &data;
     }
     // more customed attr
 };

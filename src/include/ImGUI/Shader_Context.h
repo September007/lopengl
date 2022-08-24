@@ -32,13 +32,20 @@ inline void SetProgramParam(ProgramObject<true> &pro, Universal_Group_Wrapper<T>
 }
 
 //          Generate simple VAO,VBO,VEO
+template <int pos_dim = 3>
 inline auto simpleV_ABE_O(float VL = -1, float VR = 1, float TCL = 0, float TCR = 1)
 {
     // clang-format off
         float L=VL,R=VR;
         float TL=TCL,TR=TCR;
        // static float svs[24];
-        float vertices[]={
+        float vertices3[]={
+            L,L,0,TL,TL,
+            L,R,0,TL,TR,
+            R,R,0,TR,TR,
+            R,L,0,TR,TL,
+        };
+        float vertices4[]={
             L,L,0,0,TL,TL,
             L,R,0,0,TL,TR,
             R,R,0,0,TR,TR,
@@ -53,11 +60,21 @@ inline auto simpleV_ABE_O(float VL = -1, float VR = 1, float TCL = 0, float TCR 
        // std::memcpy(sis,indices,sizeof(sis)*sizeof(uint32_t));
     // clang-format on
     auto vao = std::shared_ptr<Light::VertexArray>(Light::VertexArray::create());
-    auto vbo = std::shared_ptr<Light::VertexBuffer>(Light::VertexBuffer::create(vertices, sizeof(vertices)));
     auto veo = std::shared_ptr<Light::IndexBuffer>(Light::IndexBuffer::create(indices, sizeof(indices)));
-    // vbo = std::shared_ptr<Light::VertexBuffer>(Light::VertexBuffer::create(svs, sizeof(svs)));
-    // veo = std::shared_ptr<Light::IndexBuffer>(Light::IndexBuffer::create(sis, sizeof(sis)));
-    return std::make_tuple(vao, vbo, veo);
+    if constexpr (pos_dim == 3)
+    {
+        auto vbo = std::shared_ptr<Light::VertexBuffer>(Light::VertexBuffer::create(vertices3, sizeof(vertices3)));
+        return std::make_tuple(vao, vbo, veo);
+    }
+    else if constexpr (pos_dim == 4)
+    {
+        auto vbo = std::shared_ptr<Light::VertexBuffer>(Light::VertexBuffer::create(vertices4, sizeof(vertices4)));
+        return std::make_tuple(vao, vbo, veo);
+    }
+    else if constexpr (pos_dim == pos_dim)
+    {
+        static_assert(pos_dim == pos_dim, "dim only support 3 or 4");
+    }
 }
 
 // because Check_Render_Task_Completeness need imple the Qualified_Be_Wrapped constrain,
@@ -87,13 +104,26 @@ public:
     }
     // beacuse we expose the setting params on the UI, so it need reload params every frame
     virtual bool PrepareExecutingParameters() = 0;
-    virtual void Execute() = 0;
+    virtual void Execute()
+    {
+        glUseProgram(program.getProgram());
+        vao->bind();
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (GLuint *)0 + 3);
+        GL_ERROR_STOP();
+        vao->unbind();
+        glUseProgram(0);
+    };
     virtual void ShowConfig() = 0;
     // forbid stack creating
     static void I_Render_Task_Deleter(I_Render_Task *p)
     {
         delete p;
     }
+
+    std::shared_ptr<Light::VertexArray> vao;
+    std::shared_ptr<Light::VertexBuffer> vbo;
+    std::shared_ptr<Light::IndexBuffer> veo;
 
 protected:
     virtual ~I_Render_Task(){};
@@ -107,9 +137,12 @@ public:
     try
     {
         for (auto &task : tasks)
-        {
+        try{
             task->PrepareExecutingParameters();
             task->Execute();
+        }
+        catch(std::exception&e){
+            std::cerr<<std::endl;
         }
         if (ImGui::Begin("hot config"))
         {
@@ -117,8 +150,8 @@ public:
             {
                 task->ShowConfig();
             }
-            ImGui::End();
         }
+        ImGui::End();
     }
     catch (std::exception &e)
     {
@@ -185,9 +218,6 @@ struct NV12_to_RGB : public I_Render_Task
             params.data.frame_width.data = params.data.shader_params.data.dst_Width.data;
         }
     }
-    std::shared_ptr<Light::VertexArray> vao;
-    std::shared_ptr<Light::VertexBuffer> vbo;
-    std::shared_ptr<Light::IndexBuffer> veo;
     void resetOpenGLObjects()
     {
         // calc vertex position
@@ -195,7 +225,7 @@ struct NV12_to_RGB : public I_Render_Task
         float fh = params.data.frame_height.data, dh = params.data.shader_params.data.dst_Height.data;
         float fw = params.data.frame_width.data, dw = params.data.shader_params.data.dst_Width.data;
         auto vx = dw / fw * 2 - 1, vy = dh / fh * 2 - 1;
-        std::tie(vao, vbo, veo) = simpleV_ABE_O(vx, vy);
+        std::tie(vao, vbo, veo) = simpleV_ABE_O<4>(vx, vy);
 
         Light::BufferLayout layout = {
             Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
@@ -209,4 +239,55 @@ private:
     ~NV12_to_RGB(){
 
     };
+};
+
+struct Test_Render_Task : public I_Render_Task
+{
+    Test_Render_Task(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
+        : I_Render_Task(name, vsSrc, fsSrc, cc) {}
+    struct SettingParams
+    {
+        struct ShaderParams
+        {
+            Universal_Type_Wrapper<string> texturePath = {"aTexture", R"(F:/BMP/9.dib)"};
+            Universal_Type_Wrapper<float> VL = {"vertex span-X", 1, -1, 1};
+            Universal_Type_Wrapper<float> VR = {"vertex span-Y", 1, -1, 1};
+            auto GetAllAttr() { return std::tie(texturePath, VL, VR); }
+        };
+        Universal_Group_Wrapper<ShaderParams> shader_params = {"shader params", {}};
+        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../media/shaders/quick_use_simple/this.vs.glsl)"};
+        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../media/shaders/quick_use_simple/this.fs.glsl)"};
+
+        auto GetAllAttr() { return std::tie(shader_params, vsSrc, fsSrc); }
+    };
+    Universal_Group_Wrapper<SettingParams> params = {"Shader Setting", {}};
+    // texture obj
+    TextureObject tex = {-1, 0};
+    bool PrepareExecutingParameters() override
+    {
+        program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
+                                        ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
+        program.use();
+        std::tie(vao, vbo, veo) = simpleV_ABE_O<3>();
+
+        Light::BufferLayout layout = {
+            Light::BufferElement(Light::ShaderDataType::Float3, "aPos", false),
+            Light::BufferElement(Light::ShaderDataType::Float2, "aTexCoord", false)};
+        tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texturePath.data);
+        program.prepareVBO(*vbo.get());
+        glClearColor(0.2, 0.2, 0.0, 1);
+        program.setInt(params->shader_params->texturePath.GetName(), tex.targetTexture - GL_TEXTURE0);
+
+        vbo->setLayout(layout);
+        vao->addVertexBuffer(vbo);
+        vao->setIndexBuffer(veo);
+        program.unuse();
+        return true;
+    }
+    void ShowConfig()
+    {
+        Draw_element(params, [] {
+
+        });
+    }
 };

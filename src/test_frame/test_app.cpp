@@ -45,15 +45,21 @@ int tmain()
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	// Our state
-	bool show_demo_window = true;
+	bool show_demo_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	CentralController cc;
-	cc.tasks.push_back(std::shared_ptr<NV12_to_RGB>(
-		new NV12_to_RGB("NV12_to_RGB",
-						readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
-						readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
-						&cc),
+	// cc.tasks.push_back(std::shared_ptr<NV12_to_RGB>(
+	// 	new NV12_to_RGB("NV12_to_RGB",
+	// 					readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
+	// 					readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
+	// 					&cc),
+	// 	&I_Render_Task::I_Render_Task_Deleter));
+	cc.tasks.push_back(std::shared_ptr<Test_Render_Task>(
+		new Test_Render_Task("Test_Render_Task",
+							 readFile("../media/shaders/quick_use_simple/this.vs.glsl"),
+							 readFile("../media/shaders/quick_use_simple/this.fs.glsl"),
+							 &cc),
 		&I_Render_Task::I_Render_Task_Deleter));
 	// Main loop
 	while (!glfwWindowShouldClose(window))
@@ -67,7 +73,56 @@ int tmain()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		// Shader Tasks Prepare and execute
-		cc.Tick();
+		// cc.Tick();
+		auto t = dynamic_cast<Test_Render_Task *>(cc.tasks[0].get());
+		switch (0)
+		{
+		case 0:
+			cc.Tick();
+			break;
+		case 1:
+			t->PrepareExecutingParameters();
+			t->Execute();
+			t->ShowConfig();
+			break;
+		case 2:
+			auto &vao = t->vao;
+			auto &vbo = t->vbo;
+			auto &veo = t->veo;
+			auto &tex = t->tex;
+			auto &program = t->program;
+			auto &params = t->params;
+
+			program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
+											ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
+			program.use();
+			std::tie(vao, vbo, veo) = simpleV_ABE_O<3>();
+
+			Light::BufferLayout layout = {
+				Light::BufferElement(Light::ShaderDataType::Float3, "aPos", false),
+				Light::BufferElement(Light::ShaderDataType::Float2, "aTexCoord", false)};
+			tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texturePath.data);
+			program.prepareVBO(*vbo.get());
+			glClearColor(0.2, 0.2, 0.0, 1);
+			program.setInt(params->shader_params->texturePath.GetName(), tex.targetTexture - GL_TEXTURE0);
+
+			vbo->setLayout(layout);
+			vao->addVertexBuffer(vbo);
+			vao->setIndexBuffer(veo);
+			program.unuse();
+
+			program.use();
+			vao->bind();
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (GLuint *)(0) + 3);
+			vao->unbind();
+
+			glUseProgram(0);
+
+			program.unuse();
+			t->ShowConfig();
+		};
+
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 		if (show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
