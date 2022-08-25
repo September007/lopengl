@@ -4,7 +4,7 @@
 #include <ImGUI/ImGUI_Utils.h>
 #include <cmath>
 #include <ImGUI/Shader_Context.h>
-
+#include <ImGUI/CROP.h>
 static void glfw_error_callback(int error, const char *description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -49,16 +49,21 @@ int tmain()
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	CentralController cc;
-	// cc.tasks.push_back(std::shared_ptr<NV12_to_RGB>(
+	// cc.AddTask(std::shared_ptr<NV12_to_RGB>(
 	// 	new NV12_to_RGB("NV12_to_RGB",
-	// 					readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
-	// 					readFile("./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
+	// 					readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
+	// 					readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
 	// 					&cc),
 	// 	&I_Render_Task::I_Render_Task_Deleter));
-	cc.tasks.push_back(std::shared_ptr<Test_Render_Task>(
+	cc.AddTask(std::shared_ptr<Test_Render_Task>(
 		new Test_Render_Task("Test_Render_Task",
 							 readFile("../media/shaders/quick_use_simple/this.vs.glsl"),
 							 readFile("../media/shaders/quick_use_simple/this.fs.glsl"),
+							 &cc),
+		&I_Render_Task::I_Render_Task_Deleter));
+		cc.AddTask(std::shared_ptr<I_Render_Task>(new CROP("crop",
+						readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl"),
+						readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl"),
 							 &cc),
 		&I_Render_Task::I_Render_Task_Deleter));
 	// Main loop
@@ -73,61 +78,7 @@ int tmain()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		// Shader Tasks Prepare and execute
-		// cc.Tick();
-		auto t = dynamic_cast<Test_Render_Task *>(cc.tasks[0].get());
-		static int p = 0;
-		const char *items[] = {"Tick", "UnWrapped Tick", "unWrapped Progress"};
-		//if (ImGui::Begin("hot config"))
-			ImGui::Combo("choose path", &p, items, sizeof(items) / sizeof(*items));
-		//ImGui::End();
-		switch (p)
-		{
-		case 0:
-			cc.Tick();
-			break;
-		case 1:
-			t->PrepareExecutingParameters();
-			t->Execute();
-			cc.ShowConfig();
-			break;
-		case 2:
-			auto &vao = t->vao;
-			auto &vbo = t->vbo;
-			auto &veo = t->veo;
-			auto &tex = t->tex;
-			auto &program = t->program;
-			auto &params = t->params;
-
-			program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
-											ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-			program.use();
-			std::tie(vao, vbo, veo) = simpleV_ABE_O<3>(params->shader_params->VL.data,params->shader_params->VR.data);
-
-			Light::BufferLayout layout = {
-				Light::BufferElement(Light::ShaderDataType::Float3, "aPos", false),
-				Light::BufferElement(Light::ShaderDataType::Float2, "aTexCoord", false)};
-			tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texturePath.data);
-			program.prepareVBO(*vbo.get());
-			glClearColor(0.2, 0.2, 0.0, 1);
-			program.setInt(params->shader_params->texturePath.GetName(), tex.targetTexture - GL_TEXTURE0);
-
-			GL_ERROR_STOP();
-			vbo->setLayout(layout);
-			vao->addVertexBuffer(vbo);
-			vao->setIndexBuffer(veo);
-			program.unuse();
-
-			program.use();
-			vao->bind();
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (GLuint *)(0) + 3);
-			vao->unbind();
-
-			glUseProgram(0);
-
-			cc.ShowConfig();
-		};
-
+		cc.Tick();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 		if (show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);

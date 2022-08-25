@@ -2,21 +2,33 @@
 #include <helper/OpenGL_Utils.h>
 #include <helper/OpenGL_Objects.h>
 #include <ImGUI/ImGUI_Utils.h>
-
+#include <helper/error.h>
+#include <map>
 #include <fmt/format.h>
 using std::string;
 /*******************************************************************/
 /************** automatocally set program uniforms by Wrapper ****/
 /*******************************************************************/
+inline void checkExist(ProgramObject<true> &pro,const string&name){
+    auto p=pro.getUniforms();
+    auto ex = (p.find(name) != p.end());
+    if (!ex)
+    {
+        std::cerr << fmt::format("uniform {} not found\n",name) << std::endl;
+    }
+}
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Type_Wrapper<int> &i)
 {
+    checkExist(pro,i.GetName());
     pro.setInt(i.GetName(), i.data);
 }
 
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Type_Wrapper<float> &i)
 {
+    checkExist(pro,i.GetName());
     pro.setFloat(i.GetName(), i.data);
 }
+
 
 template <typename T, int index = 0>
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Group_Wrapper<T> &i)
@@ -101,11 +113,16 @@ public:
     ProgramObject<true> program;
     CentralController *ccontroller = nullptr;
     I_Render_Task(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
-        : rsName(name), ccontroller(cc),
-          program(Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, vsSrc),
-                                        ShaderObject(GL_FRAGMENT_SHADER, fsSrc)))
+        : rsName(name), ccontroller(cc),program(0)
     {
+        try{
+         program=Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, vsSrc),
+                                        ShaderObject(GL_FRAGMENT_SHADER, fsSrc));
+        }catch(std::exception&e){
+            std::cerr<<fmt::format("catch error {}",e.what());
+        }
     }
+    auto &GetName() { return rsName; }
     // beacuse we expose the setting params on the UI, so it need reload params every frame
     virtual bool PrepareExecutingParameters() = 0;
     virtual void Execute()
@@ -136,11 +153,16 @@ protected:
 class CentralController
 {
 public:
-    std::vector<std::shared_ptr<I_Render_Task>> tasks;
+    // task name :  task itself
+    std::map<std::string, std::shared_ptr<I_Render_Task>> tasks;
+    std::string currentTaskName;
+    Universal_Type_Wrapper<Type_Combo> options = {"which shader", {}};
+    static constexpr std::string_view currentTaskNameForAll = "all the tasks";
     void Tick()
     try
     {
-        for (auto &task : tasks)
+        auto execute_one = [](std::shared_ptr<I_Render_Task> &task)
+        {
             try
             {
                 task->PrepareExecutingParameters();
@@ -150,7 +172,11 @@ public:
             {
                 std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
             }
+        };
         this->ShowConfig();
+        // config will list all the tasks out, and a checkbox is for this selecting;
+        // current time this only support choose one or all.
+        _Current_Choosed_Task_Relevant(execute_one);
     }
     catch (std::exception &e)
     {
@@ -164,7 +190,9 @@ public:
     {
         if (ImGui::Begin("hot config"))
         {
-            for (auto &task : tasks)
+            Draw_element(options);
+            auto draw_task = [](std::shared_ptr<I_Render_Task> &task)
+            {
                 try
                 {
                     task->ShowConfig();
@@ -173,8 +201,32 @@ public:
                 {
                     std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
                 }
+            };
+            _Current_Choosed_Task_Relevant(draw_task);
         }
         ImGui::End();
+    }
+    auto AddTask(std::shared_ptr<I_Render_Task> &&task)
+    {
+        auto ret = tasks.emplace(task->GetName(), task);
+        if (ret.second)
+            options->options.push_back(tasks[task->GetName()]->GetName().c_str());
+    }
+
+protected:
+    void _Current_Choosed_Task_Relevant(std::function<void(std::shared_ptr<I_Render_Task>&)> fn)
+    {
+        // obtain data from option, change currentTaskName only if it's useable
+        auto op = options->GetChoosedOption();
+        if (op.first)
+            currentTaskName = op.second;
+        if (currentTaskName == currentTaskNameForAll)
+            for (auto &[name, task] : tasks)
+                fn(task);
+        else if (auto p = tasks.find(currentTaskName); p != tasks.end())
+            fn(p->second);
+        else if (tasks.size())
+            fn(tasks.begin()->second);
     }
 };
 
@@ -198,10 +250,10 @@ struct NV12_to_RGB : public I_Render_Task
         Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
         Universal_Type_Wrapper<int> frame_width = {"frame width", 1920, 256, 2048, 256};
         Universal_Type_Wrapper<int> frame_height = {"frame height", 1080, 256, 2048, 256};
-        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl)"};
-        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(./glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl)"};
+        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl)"};
+        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl)"};
 
-        auto GetAllAttr() { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height,vsSrc,fsSrc); }
+        auto GetAllAttr() { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
     };
     NV12_to_RGB(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
         : I_Render_Task(name, vsSrc, fsSrc, cc) {}
@@ -215,13 +267,13 @@ struct NV12_to_RGB : public I_Render_Task
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
         program.use();
-        
+
         // calc vertex position
         // xucl todo: use operator-> to simplify the longy reference like xxx.data.yyy to xxx->yyy
-        float fh = params.data.frame_height.data, dh = params.data.shader_params.data.dst_Height.data;
-        float fw = params.data.frame_width.data, dw = params.data.shader_params.data.dst_Width.data;
+        float fh = params->frame_height.data, dh = params->shader_params->dst_Height.data;
+        float fw = params->frame_width.data, dw = params->shader_params->dst_Width.data;
         auto vx = dw / fw * 2 - 1, vy = dh / fh * 2 - 1;
-        std::tie(vao, vbo, veo) = simpleV_ABE_O<4>(vx, vy);
+        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(0, vx, -vy, 0);
 
         Light::BufferLayout layout = {
             Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
@@ -229,8 +281,12 @@ struct NV12_to_RGB : public I_Render_Task
         vbo->setLayout(layout);
         vao->addVertexBuffer(vbo);
         vao->setIndexBuffer(veo);
+        // xucl error: if all the shaders binding the same GL_TEXTURE1, in the serial calling in cc.Tick()
+        // there would be a overwriting behaviour on this GL_TEXTURE1
+        // xucl todo: here generate yuv data by hand
         tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texture_path.data);
-        
+        program.use();
+        // program.setInt(params->shader_params->)
         return true;
     }
     void Execute() override
@@ -250,27 +306,11 @@ struct NV12_to_RGB : public I_Render_Task
                      {
             ImGui::Text("when Shader-params.dst_* and frame width is set up");
             ImGui::Text("the vertex coord will be generated automatically"); });
-        if (params.data.will_autogen_frame_wh.data == true)
+        if (params->will_autogen_frame_wh.data == true)
         {
-            params.data.frame_height.data = params.data.shader_params.data.dst_Height.data;
-            params.data.frame_width.data = params.data.shader_params.data.dst_Width.data;
+            params->frame_height.data = params->shader_params->dst_Height.data;
+            params->frame_width.data = params->shader_params->dst_Width.data;
         }
-    }
-    void resetOpenGLObjects()
-    {
-        // calc vertex position
-        // xucl todo: use operator-> to simplify the longy reference like xxx.data.yyy to xxx->yyy
-        float fh = params.data.frame_height.data, dh = params.data.shader_params.data.dst_Height.data;
-        float fw = params.data.frame_width.data, dw = params.data.shader_params.data.dst_Width.data;
-        auto vx = dw / fw * 2 - 1, vy = dh / fh * 2 - 1;
-        std::tie(vao, vbo, veo) = simpleV_ABE_O<4>(vx, vy);
-
-        Light::BufferLayout layout = {
-            Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
-            Light::BufferElement(Light::ShaderDataType::Float2, "TextureUV", false)};
-        vbo->setLayout(layout);
-        vao->addVertexBuffer(vbo);
-        vao->setIndexBuffer(veo);
     }
 
 private:
@@ -308,18 +348,16 @@ struct Test_Render_Task : public I_Render_Task
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
         program.use();
-        std::tie(vao, vbo, veo) = simpleV_ABE_O<3>(params->shader_params->VL.data, params->shader_params->VR.data);
-        std::tie(vao, vbo, veo) =detailed_simpleV_ABE_O<3>(
+        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<3>(
             params->shader_params->HL.data, params->shader_params->HR.data,
-            params->shader_params->VL.data, params->shader_params->VR.data
-            );
+            params->shader_params->VL.data, params->shader_params->VR.data);
 
         Light::BufferLayout layout = {
             Light::BufferElement(Light::ShaderDataType::Float3, "aPos", false),
             Light::BufferElement(Light::ShaderDataType::Float2, "aTexCoord", false)};
         tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texturePath.data);
         program.prepareVBO(*vbo.get());
-        glClearColor(0.2, 0.2, 0.0, 1);
+        // glClearColor(0.2, 0.2, 0.0, 1);
         program.setInt(params->shader_params->texturePath.GetName(), tex.targetTexture - GL_TEXTURE0);
 
         vbo->setLayout(layout);

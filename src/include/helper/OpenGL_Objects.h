@@ -4,9 +4,24 @@
 #include <buffer.hpp>
 #include <context.hpp>
 #include <GLFW/glfw3.h>
+#include <helper/error.h>
+using namespace std::literals;
 template <bool strict_ = STRICT_>
 struct ShaderObject
 {
+    // register callback
+    inline static const ScopeObject registerCallback={
+        []{
+            using namespace error_map;
+            Helper::Register(code_packet(error_code::error,object_code::shader,message_code::compile),
+            []{
+
+            });
+        },
+        []{
+
+        }
+    };
     std::shared_ptr<GLint> shaderHandler = nullptr;
     // save state info which queried last time, the construction func would set this as compile info
     std::string tempInfo;
@@ -79,17 +94,21 @@ struct ProgramObject
     {
         this->program.reset(new GLint(program), [](GLint *p)
                             { glDeleteProgram(*p); });
+        if (program == 0)
+            return;
         // check program link status
         auto ret = getInfo(GL_LINK_STATUS);
         if constexpr (strict_)
             if (ret != GL_TRUE)
                 throw std::runtime_error("program link failed:\n\t" + tempInfo);
     }
-    void use(){glUseProgram(getProgram());}
-    void unuse(){glUseProgram(0);}
+    void use() { glUseProgram(getProgram()); }
+    void unuse() { glUseProgram(0); }
     GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
     {
+        if (getProgram() == 0)
+            return GL_FALSE;
         constexpr int tempLength = 1024;
         char temp[tempLength];
         GLint params = GL_FALSE;
@@ -140,15 +159,17 @@ struct ProgramObject
     }
     // this is compaticable of Light::Objects
 
-    //use this for location binding
-    void prepareVBO( Light::VertexBuffer &vbo){
-        auto layout=vbo.getLayout();
+    // use this for location binding
+    void prepareVBO(Light::VertexBuffer &vbo)
+    {
+        auto layout = vbo.getLayout();
         std::vector<std::pair<std::string, GLint>> locas;
-        int pos=0;
-        for(auto &e:layout){
-            locas.emplace_back(e.getName(),pos++);
+        int pos = 0;
+        for (auto &e : layout)
+        {
+            locas.emplace_back(e.getName(), pos++);
         }
-        bindAttributesLocations(getProgram(),locas);
+        bindAttributesLocations(getProgram(), locas);
     }
 };
 
@@ -190,7 +211,6 @@ namespace Helper
 
 } // namespace Helper
 
-
 class TextureObject
 {
 public:
@@ -198,7 +218,7 @@ public:
     GLuint targetTexture;
     int width, height, nChannels;
     TextureObject() = delete;
-    TextureObject(GLuint obj_,GLuint targetTex):targetTexture(targetTex)
+    TextureObject(GLuint obj_, GLuint targetTex) : targetTexture(targetTex)
     {
         obj.reset(new GLuint(obj_), [](GLuint *p)
                   {
@@ -213,10 +233,11 @@ public:
         height = h;
         nChannels = n;
     }
-    void bind(GLuint target){
+    void bind(GLuint target)
+    {
         GL_ERROR_STOP();
-        
-        //glBindTexture(target,*obj);
+
+        // glBindTexture(target,*obj);
         GL_ERROR_STOP();
     }
 };
@@ -225,14 +246,14 @@ namespace Helper
     inline auto CreateTexture(GLuint textureTarget, void *data, int width, int height, int nChannels)
     {
         GLuint texture;
-        glActiveTexture(textureTarget);
+        glActiveTexture(textureTarget); // binding textureTarget->GL_TEXTURE_2D
         glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, texture); // binding GL_TEXTURE_2D->texture, so there is textureTarget->texture
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        auto ret = TextureObject(texture,textureTarget);
+        auto ret = TextureObject(texture, textureTarget);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + nChannels - 3, width, height, 0, GL_RGB + nChannels - 3, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -247,6 +268,20 @@ namespace Helper
         stbi_image_free(data);
         return ret;
     }
+    inline auto CreateTextureByData(GLuint textureTarget, GLenum innerFormat, GLenum format, void *data, uint32_t width, uint32_t height)
+    {
+
+        GLuint texture;
+        glActiveTexture(textureTarget); // binding textureTarget->GL_TEXTURE_2D
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture); // binding GL_TEXTURE_2D->texture, so there is textureTarget->texture
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, innerFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    };
 } // namespace Helper
 
 using glm::vec3;
@@ -333,21 +368,23 @@ public:
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
             cameraSpeed += deltaTime * 1;
     }
-void framebuffer_size_callback(GLFWwindow *window, int width_, int height_)
-{
-    this->screenWidth=width_;
-    this->screenHeight=height_;
-}
+    void framebuffer_size_callback(GLFWwindow *window, int width_, int height_)
+    {
+        this->screenWidth = width_;
+        this->screenHeight = height_;
+    }
     auto GetProjectionMatrix()
     {
         return glm::perspective(glm::radians(fov), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
     }
-    auto GetViewMatrix(){
+    auto GetViewMatrix()
+    {
         return glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);
     }
     // when ct==0,this will disable keyboard affection
-    void Tick(double currentTime){
-        deltaTime = glm::min<float>(deltaTimeClipMax,glm::max<float>(0, currentTime - lastFrameTime));
+    void Tick(double currentTime)
+    {
+        deltaTime = glm::min<float>(deltaTimeClipMax, glm::max<float>(0, currentTime - lastFrameTime));
         lastFrameTime = currentTime;
     }
 };

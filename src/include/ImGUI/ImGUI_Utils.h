@@ -21,6 +21,9 @@ using std::string;
 #include <type_traits>
 #include <tuple>
 #include <string>
+/*****************************************************************************************/
+/**************************  type constrains  ********************************************/
+/*****************************************************************************************/
 template <typename... T>
 struct is_from_tuple : public std::false_type{};
 template <typename... T>
@@ -55,6 +58,9 @@ concept Qualified_Be_Wrapped=requires(T t){
     t.GetAllAttr();
 };
 
+/*****************************************************************************************/
+/********************  genric  Type Wrapper  ********************************************/
+/*****************************************************************************************/
 template <typename T>
 struct Base_Type_Wrapper{
     std::string name;
@@ -73,9 +79,12 @@ struct Base_Type_Wrapper{
 template <typename T>
  struct Universal_Type_Wrapper:public Base_Type_Wrapper<T>
  {
-    Universal_Type_Wrapper(){
-        static_assert(std::is_same_v<T,T>, "this imple is not allowed");
-    }
+    using ValueType=T;
+    using DT=std::remove_reference_t<T>;
+    Universal_Type_Wrapper(const string &name,T data,int flag=ImGuiInputTextFlags_AllowTabInput)
+    :Base_Type_Wrapper<T>(name,data,flag){}
+    // no longer report compile error for not specialized type T, 
+    // but leave it until implementation in Draw_Element.
  };
 template <typename T>
 requires( std::integral<std::remove_reference_t<T>>||
@@ -119,6 +128,11 @@ requires( std::integral<std::remove_reference_t<T>>||
            static_assert(!std::is_same_v<T,T>,"Unsupport Type");
     }
 };
+
+/*****************************************************************************************/
+/**************************  special Types  ********************************************/
+/*****************************************************************************************/
+// show in TextInput
 template <typename T>
 requires(std::is_same_v<string,std::remove_reference_t<T>>)
  struct Universal_Type_Wrapper<T>:public Base_Type_Wrapper<T>
@@ -129,7 +143,28 @@ requires(std::is_same_v<string,std::remove_reference_t<T>>)
     :Base_Type_Wrapper<T>(name,data,flag){}
 };
 
+// show in checkbox
+template <>
+ struct Universal_Type_Wrapper<bool>:public Base_Type_Wrapper<bool>
+{
+    using ValueType=bool;
+    using DT=std::remove_reference_t<ValueType>;
+    Universal_Type_Wrapper(const string &name,bool data,int flag=ImGuiInputTextFlags_AllowTabInput)
+    :Base_Type_Wrapper<bool>(name,data,flag){}
+};
 
+// show in combo
+struct Type_Combo{
+    std::vector<const char*> options;
+    int choosed=0;
+    auto GetChoosedOption(){
+        auto c=choosed<int(options.size());
+        return std::make_pair(c,c?options[choosed]:nullptr);
+    }
+};
+/*****************************************************************************************/
+/**************************  Univeral Group Wrapper  *************************************/
+/*****************************************************************************************/
 namespace {
     struct Example_Group_Type{
         Universal_Type_Wrapper<int> i;
@@ -139,16 +174,6 @@ namespace {
         }
     };
 }
-// show in checkbox
-template <>
- struct Universal_Type_Wrapper<bool>:public Base_Type_Wrapper<bool>
-{
-    using ValueType=bool;
-    using DT=std::remove_reference_t<ValueType>;
-    Universal_Type_Wrapper(const string &name,bool data,int flag=ImGuiInputTextFlags_AllowTabInput)
-    :Base_Type_Wrapper<bool>(name,data,flag){}
-
-};
 // note if type T is qualified to be wrapped,
 // it need implement GetAllAttr() ,see Example_Group_Type
 template<typename T>
@@ -171,6 +196,10 @@ struct Universal_Group_Wrapper{
     }
     // more customed attr
 };
+
+/*****************************************************************************************/
+/**************************  UI Drawing  *************************************************/
+/*****************************************************************************************/
 // clang-format on
 template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
 requires !Visible_Attr_Group_Type<T>
@@ -182,14 +211,15 @@ inline void Draw_element(T &t)
     {
         ImGui::DragFloat(t.GetName().c_str(), &data, 0.005, t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
     }
+    // here check bool first, cuz integeral vals maybe generic handling in the future
+    else if constexpr (std::is_same_v<RRT, bool>)
+    {
+        ImGui::Checkbox(t.GetName().c_str(),&t.data);
+    }
     else if constexpr (std::is_same_v<RRT, int>)
     {
        // ImGui::SliderInt(t.GetName().c_str(), &data, t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
      ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
-    }
-    else if constexpr (std::is_same_v<RRT, bool>)
-    {
-        ImGui::Checkbox(t.GetName().c_str(),&t.data);
     }
     else if constexpr (std::is_same_v<RRT, std::string>)
     {
@@ -201,6 +231,10 @@ inline void Draw_element(T &t)
         ImGui::Text(name_hints.c_str());
         ImGui::InputTextMultiline(t.GetName().c_str(),const_cast<char*>(temp.data()),temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 2),t.GetFlag());
         data=temp.data();
+    }
+    else if constexpr (std::is_same_v<RRT, Type_Combo>)
+    {
+        ImGui::Combo(t.GetName().c_str(),&t->choosed, t->options.data(),t->options.size());    
     }
     else if constexpr (std::is_same_v<T, T>)
     {
