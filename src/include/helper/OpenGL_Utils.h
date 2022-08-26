@@ -189,30 +189,78 @@ std::string toRGB(UNIT *data, int pixelLength)
     return ret;
 }
 
-
+/*********************************************************************/
+/******************* imple for data caching    ***********************/
+/*********************************************************************/
 template <typename T>
-struct CachingWrapper:public T{
-    T cache;
-    template<typename ...ArgsT>
-    CachingWrapper(ArgsT&&...ags) :T(std::forward<ArgsT>(ags)...), cache(std::forward<ArgsT>(ags)...) {}
-
-    auto& GetCache() { return  cache; }
-    template <typename Any>
-    auto SetCache(Any&& c) { GetCache() = std::forward<Any>(c); }
-    bool isSameAsCache() {
-        // CRTP
-        // as soon as this class is virtual, when derived class call this ,
-        // transing to derived class should always work, just be sure derived class  
-        // declare like class DC:... CachingObject<DC>
-        // so , there is static_cast, not dynamic_cast
-        return *static_cast<T*>(this) == GetCache();
-    }
-    // return isSameAsCache, but will also set Cache when there is diffs 
-    bool Sync() {
-        auto ret = isSameAsCache();
-        if (!ret)
-            SetCache(*static_cast<T*>(this));
-        return ret;
-    }
+struct BuiltIn_Wrapper
+{
+    using DT = std::decay_t<T>;
+    DT data;
+    operator DT &() { return data; }
+    auto &GetData() { return data; }
+    auto &GetData() const { return data; }
+};
+template <typename T>
+requires std::is_class_v<T>
+struct BuiltIn_Wrapper<T> : public std::decay_t<T>
+{
+    using base=std::decay_t<T>;
+    auto &GetData() { return *static_cast <base* > (this); }
+    auto &GetData() const { return *static_cast < base const * > (this); }
 };
 
+// builting type can't be deriving, so use this BuiltIn_Wrapper
+// as inherited proxy
+template <typename T>
+struct CachingWrapper : public BuiltIn_Wrapper<T>
+{
+    using base = BuiltIn_Wrapper<T>;
+    using DataType = std::decay_t<T>;
+    DataType cache;
+    // note here when constructing base, we actually missing a multi-params constructor for base,
+    // and we have have declare one like the CachingWrapper, so we need pass a DataType as a param to it
+    // like you see, use brackets{} is enough
+    template <typename... ArgsT>
+    CachingWrapper(ArgsT &&...ags) : base({std::forward<ArgsT>(ags)...}), cache(std::forward<ArgsT>(ags)...) {}
+
+    auto &GetCache() { return cache; }
+    template <typename Any>
+    auto SetCache(Any &&c) { GetCache() = std::forward<Any>(c); }
+    template <typename Any>
+    auto SetSelf(Any &&c) { base::GetData() = c; }
+    bool isSameAsCache()
+    {
+        // CRTP
+        // as soon as this class is virtual, when derived class call this ,
+        // transing to derived class should always work, just be sure derived class
+        // declare like class DC:... CachingObject<DC>
+        // so , there is static_cast, not dynamic_cast
+        return base::GetData() == GetCache();
+    }
+    // return isSameAsCache, but will also set Cache when there is diffs
+    bool SyncCache()
+    {
+        auto ret = isSameAsCache();
+        if (!ret)
+            SetCache(*static_cast<T *>(this));
+        return ret;
+    }
+    // return isSameAsCache, but will also set Cache when there is diffs
+    bool Sync(DataType const &data)
+    {
+        SetSelf(data);
+        auto ret = isSameAsCache();
+        if (!ret)
+            SetCache(data);
+        return ret;
+    }
+    DataType* operator->(){
+        return &base::GetData();
+    }
+    const DataType* operator->()const{
+        return &base::GetData();
+    }
+     operator DataType&(){return base::operator DataType&();}
+    
+};

@@ -1,10 +1,6 @@
 #pragma once
 #include <ImGUI/Shader_Context.h>
 
-template <typename T>
-using Cache_Type_Wrapper = CachingWrapper<Universal_Type_Wrapper<T>>;
-template <typename T>
-using Cache_Group_Wrapper = CachingWrapper<Universal_Group_Wrapper<T>>;
 struct CROP : public I_Render_Task
 {
     struct SettingParams : Check_Render_Task_Completeness<SettingParams>
@@ -39,16 +35,15 @@ struct CROP : public I_Render_Task
     CROP(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
         : I_Render_Task(name, vsSrc, fsSrc, cc) {}
 
-    Cache_Group_Wrapper<SettingParams> params = {"CROP", SettingParams{}};
+    Universal_Group_Wrapper<SettingParams> params = {"CROP", SettingParams{}};
     // texture obj
     TextureObject tex = {-1, 0};
 
     bool PrepareExecutingParameters() override
     {
-        const auto p = this;
-        p->GetName();
-        if (params.Sync())
-            return true;
+        // auto p=params.isSameAsCache();
+        // if (p)
+        //     return true;
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
         auto temp_use = program.temp_use();
@@ -110,6 +105,8 @@ struct CROP : public I_Render_Task
             params->frame_width.data = params->shader_params->dst_Width.data;
         }
     }
+    std::string &GetVsSrcFile()override{ return params->vsSrc.data;}
+    std::string &GetFsSrcFile()override{ return params->fsSrc.data;}
 
 private:
     ~CROP(){

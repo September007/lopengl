@@ -6,29 +6,34 @@
 #include <map>
 #include <fmt/format.h>
 using std::string;
+
+template <typename T>
+using Cache_Type_Wrapper = CachingWrapper<Universal_Type_Wrapper<T>>;
+template <typename T>
+using Cache_Group_Wrapper = CachingWrapper<Universal_Group_Wrapper<T>>;
 /*******************************************************************/
 /************** automatocally set program uniforms by Wrapper ****/
 /*******************************************************************/
-inline void checkExist(ProgramObject<true> &pro,const string&name){
-    auto p=pro.getUniforms();
+inline void checkExist(ProgramObject<true> &pro, const string &name)
+{
+    auto p = pro.getUniforms();
     auto ex = (p.find(name) != p.end());
     if (!ex)
     {
-        std::cerr << fmt::format("uniform {} not found\n",name) << std::endl;
+        std::cerr << fmt::format("uniform {} not found\n", name) << std::endl;
     }
 }
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Type_Wrapper<int> &i)
 {
-    checkExist(pro,i.GetName());
+    checkExist(pro, i.GetName());
     pro.setInt(i.GetName(), i.data);
 }
 
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Type_Wrapper<float> &i)
 {
-    checkExist(pro,i.GetName());
+    checkExist(pro, i.GetName());
     pro.setFloat(i.GetName(), i.data);
 }
-
 
 template <typename T, int index = 0>
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Group_Wrapper<T> &i)
@@ -50,25 +55,25 @@ inline auto detailed_simpleV_ABE_O(float HL = -1, float HR = 1, float VL = -1, f
                                    float THL = 0, float THR = 1, float TVL = 0, float TVR = 1)
 {
     // clang-format off
-        float vertices3[]={
-            HL,VL,0,THL,TVL,
-            HL,VR,0,THL,TVR,
-            HR,VR,0,THR,TVR,
-            HR,VL,0,THR,TVL,
-        };
-        float vertices4[]={
-            HL,VL,0,0,THL,TVL,
-            HL,VR,0,0,THL,TVR,
-            HR,VR,0,0,THR,TVR,
-            HR,VL,0,0,THR,TVL,
-        };
-        //std::memcpy(svs,vertices,sizeof(svs)*sizeof(float));
-        //static uint32_t sis[6];
-        uint32_t indices[]={
-            0,1,2,
-            0,2,3,
-        };
-       // std::memcpy(sis,indices,sizeof(sis)*sizeof(uint32_t));
+	float vertices3[] = {
+		HL,VL,0,THL,TVL,
+		HL,VR,0,THL,TVR,
+		HR,VR,0,THR,TVR,
+		HR,VL,0,THR,TVL,
+	};
+	float vertices4[] = {
+		HL,VL,0,0,THL,TVL,
+		HL,VR,0,0,THL,TVR,
+		HR,VR,0,0,THR,TVR,
+		HR,VL,0,0,THR,TVL,
+	};
+	//std::memcpy(svs,vertices,sizeof(svs)*sizeof(float));
+	//static uint32_t sis[6];
+	uint32_t indices[] = {
+		0,1,2,
+		0,2,3,
+	};
+	// std::memcpy(sis,indices,sizeof(sis)*sizeof(uint32_t));
     // clang-format on
     auto vao = std::shared_ptr<Light::VertexArray>(Light::VertexArray::create());
     auto veo = std::shared_ptr<Light::IndexBuffer>(Light::IndexBuffer::create(indices, sizeof(indices)));
@@ -113,13 +118,16 @@ public:
     ProgramObject<true> program;
     CentralController *ccontroller = nullptr;
     I_Render_Task(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
-        : rsName(name), ccontroller(cc),program(0)
+        : rsName(name), ccontroller(cc), program(0)
     {
-        try{
-         program=Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, vsSrc),
-                                        ShaderObject(GL_FRAGMENT_SHADER, fsSrc));
-        }catch(std::exception&e){
-            std::cerr<<fmt::format("catch error {}",e.what());
+        try
+        {
+            program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, vsSrc),
+                                            ShaderObject(GL_FRAGMENT_SHADER, fsSrc));
+        }
+        catch (std::exception &e)
+        {
+            std::cerr << fmt::format("catch error {}", e.what());
         }
     }
     auto &GetName() { return rsName; }
@@ -141,10 +149,63 @@ public:
     {
         delete p;
     }
-
+    virtual std::string &GetVsSrcFile()=0;
+    virtual std::string &GetFsSrcFile()=0;
     std::shared_ptr<Light::VertexArray> vao;
     std::shared_ptr<Light::VertexBuffer> vbo;
     std::shared_ptr<Light::IndexBuffer> veo;
+
+    // use for in-app editoring shader source
+   // Universal_Type_Wrapper<string > ss={"fs", "", ImGuiInputTextFlags_AllowTabInput,40};
+    Cache_Type_Wrapper<string> fsSrcContent = {"fs", "", ImGuiInputTextFlags_AllowTabInput,60};
+    CachingWrapper<bool> fsSrcShowing = false;
+    CachingWrapper<string> fsSrcFilePath = {};
+    void ResetShowingSrc(bool showHa, const string &fsSrcFile)
+    {
+        auto chgShow = !fsSrcShowing.Sync(showHa);
+        auto oldPath = fsSrcFilePath.GetData();
+        auto ChgSrc = !fsSrcFilePath.Sync(fsSrcFile);
+        auto chgContent=fsSrcContent.SyncCache();
+        // showing and  content change
+        if(showHa&&!chgShow&&chgContent){
+            writeFile(fsSrcFilePath.GetData(), fsSrcContent.GetData().data);
+        }
+        // with no change happening, just return
+        if (!chgShow && !ChgSrc)
+            return;
+        // change show to not show
+        if (fsSrcShowing == false && chgShow)
+        {
+            writeFile(fsSrcFilePath.GetData(), fsSrcContent.GetData().data);
+            fsSrcFilePath = "";
+            fsSrcContent.Sync({"fs", "", ImGuiInputTextFlags_AllowTabInput, fsSrcContent.GetLineCount()});
+        }
+        else if (fsSrcShowing == true && chgShow)
+        {
+            // change not show to show
+            auto p = readFile(fsSrcFilePath.GetData());
+            fsSrcContent.GetData().data = std::move(p);
+            fsSrcContent.SyncCache();
+        }
+        else if (ChgSrc)
+        {
+            writeFile(oldPath, fsSrcContent.GetData().data);
+            auto p = readFile(fsSrcFilePath.GetData());
+            fsSrcContent.GetData().data = std::move(p);
+            fsSrcContent.SyncCache();
+        }
+    }
+    void ShowSrc(bool showHa, const string &fsSrcFile)
+    {
+        ResetShowingSrc(showHa, fsSrcFile);
+        if (!showHa)
+            return;
+        if (ImGui::Begin(fmt::format("{} fs",GetName()).c_str()))
+        {
+            Draw_element(fsSrcContent);
+        }
+        ImGui::End();
+    }
 
 protected:
     virtual ~I_Render_Task(){};
@@ -156,27 +217,65 @@ public:
     // task name :  task itself
     std::map<std::string, std::shared_ptr<I_Render_Task>> tasks;
     std::string currentTaskName;
-    Universal_Type_Wrapper<Type_Combo> options = {"which shader", {}};
+    Universal_Type_Wrapper<Type_Combo> which_shader = {"which shader", {}};
     static constexpr std::string_view currentTaskNameForAll = "all the tasks";
+
+    // options to set modes like
+    struct CC_Options : public Check_Render_Task_Completeness<CC_Options>
+    {
+        Universal_Type_Wrapper<Type_Combo> shader_refresh_mode = {"refresh", Type_Combo{{"each frame", "when change", "every custom length"}}};
+        Universal_Type_Wrapper<bool> show_editor = {"show editor", true};
+        Universal_Type_Wrapper<bool> show_compile_output = {"show compile", true};
+        auto GetAllAttr() const { return std::tie(shader_refresh_mode, show_editor, show_compile_output); }
+    };
+    struct CC_Editor_Options : public Check_Render_Task_Completeness<CC_Editor_Options>
+    {
+        auto GetAllAttr() const { return std::tie(); }
+    };
+    struct CC_Compiler_Outputs_Options : public Check_Render_Task_Completeness<CC_Editor_Options>
+    {
+        auto GetAllAttr() const { return std::tie(); }
+    };
+    Cache_Group_Wrapper<CC_Options> cc_options = {"common option", CC_Options{}};
+    Cache_Group_Wrapper<CC_Editor_Options> cc_editor_options = {"editor option", CC_Editor_Options{}};
+    Cache_Group_Wrapper<CC_Compiler_Outputs_Options> cc_compiler_outputs_options = {"compiler output option", CC_Compiler_Outputs_Options{}};
     void Tick()
     try
     {
-        auto execute_one = [](std::shared_ptr<I_Render_Task> &task)
+        if (ImGui::Begin("hot config"))
         {
-            try
+            if (ImGui::BeginTabBar("Tab Options"))
             {
-                task->PrepareExecutingParameters();
-                task->Execute();
+                // 1. shader option
+                ShowConfig();
+                // 2. shader exexcute
+                auto execute_one = [](std::shared_ptr<I_Render_Task> &task)
+                {
+                    try
+                    {
+                        task->PrepareExecutingParameters();
+                        task->Execute();
+                    }
+                    catch (std::exception &e)
+                    {
+                        std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
+                    }
+                };
+                // config will list all the tasks out, and a checkbox is for this selecting;
+                // current time this only support choose one or all.
+                _Current_Choosed_Task_Relevant(execute_one);
+                // 3. compiler options
+                if (ImGui::BeginTabItem("compile"))
+                {
+                    Draw_element(cc_options);
+                    ImGui::EndTabItem();
+                }
+                ImGui::EndTabBar();
             }
-            catch (std::exception &e)
-            {
-                std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
-            }
-        };
-        this->ShowConfig();
-        // config will list all the tasks out, and a checkbox is for this selecting;
-        // current time this only support choose one or all.
-        _Current_Choosed_Task_Relevant(execute_one);
+        }
+        ImGui::End();
+        // show editor
+        _Show_FS_Editor();
     }
     catch (std::exception &e)
     {
@@ -188,9 +287,9 @@ public:
     }
     void ShowConfig()
     {
-        if (ImGui::Begin("hot config"))
+        if (ImGui::BeginTabItem("shader"))
         {
-            Draw_element(options);
+            Draw_element(which_shader);
             auto draw_task = [](std::shared_ptr<I_Render_Task> &task)
             {
                 try
@@ -203,30 +302,43 @@ public:
                 }
             };
             _Current_Choosed_Task_Relevant(draw_task);
+            ImGui::EndTabItem();
         }
-        ImGui::End();
     }
     auto AddTask(std::shared_ptr<I_Render_Task> &&task)
     {
         auto ret = tasks.emplace(task->GetName(), task);
         if (ret.second)
-            options->options.push_back(tasks[task->GetName()]->GetName().c_str());
+            which_shader->options.push_back(tasks[task->GetName()]->GetName().c_str());
     }
 
 protected:
-    void _Current_Choosed_Task_Relevant(std::function<void(std::shared_ptr<I_Render_Task>&)> fn)
+    void  _Current_Choosed_Task_Relevant(std::function<void(std::shared_ptr<I_Render_Task> &)> fn)
     {
         // obtain data from option, change currentTaskName only if it's useable
-        auto op = options->GetChoosedOption();
+        auto op = which_shader->GetChoosedOption();
         if (op.first)
             currentTaskName = op.second;
         if (currentTaskName == currentTaskNameForAll)
             for (auto &[name, task] : tasks)
                 fn(task);
-        else if (auto p = tasks.find(currentTaskName); p != tasks.end())
-            fn(p->second);
-        else if (tasks.size())
-            fn(tasks.begin()->second);
+        else
+        {
+            std::shared_ptr<I_Render_Task> cs;
+            if (auto p = tasks.find(currentTaskName); p != tasks.end())
+                cs=p->second;
+            else if (tasks.size())
+                cs=tasks.begin()->second;
+            fn(cs);
+        }
+    }
+    void _Show_FS_Editor(){
+        auto chgOptions=!cc_options.isSameAsCache();
+        if(!chgOptions)return;
+        auto show_fs_editor=[this](std::shared_ptr<I_Render_Task> &t){
+            t->ShowSrc(this->cc_options.data.show_editor.data,t->GetFsSrcFile());
+        };
+        _Current_Choosed_Task_Relevant(show_fs_editor);
     }
 };
 
@@ -244,7 +356,7 @@ struct NV12_to_RGB : public I_Render_Task
             // generated by texture
             Universal_Type_Wrapper<int> overlay_Width = {"overlay_Width", 512, 256, 2048, 256};
             Universal_Type_Wrapper<int> overlay_Height = {"overlay_Height", 512, 256, 2048, 256};
-            auto GetAllAttr() const{ return std::tie(texture_path, mode, dst_Width, dst_Height, overlay_Width, overlay_Height); }
+            auto GetAllAttr() const { return std::tie(texture_path, mode, dst_Width, dst_Height, overlay_Width, overlay_Height); }
         };
         Universal_Group_Wrapper<Shader_Params> shader_params = {"Shader params", {}};
         Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
@@ -253,7 +365,7 @@ struct NV12_to_RGB : public I_Render_Task
         Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl)"};
         Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl)"};
 
-        auto GetAllAttr() const{ return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
+        auto GetAllAttr() const { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
     };
     NV12_to_RGB(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
         : I_Render_Task(name, vsSrc, fsSrc, cc) {}
@@ -266,8 +378,8 @@ struct NV12_to_RGB : public I_Render_Task
     {
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-       
-        auto temp_use=program.temp_use();
+
+        auto temp_use = program.temp_use();
 
         // calc vertex position
         // xucl todo: use operator-> to simplify the longy reference like xxx.data.yyy to xxx->yyy
@@ -304,15 +416,16 @@ struct NV12_to_RGB : public I_Render_Task
         // constexpr bool s=std::is_integral_v<bool>;
         Draw_element(params, []
                      {
-            ImGui::Text("when Shader-params.dst_* and frame width is set up");
-            ImGui::Text("the vertex coord will be generated automatically"); });
+				ImGui::Text("when Shader-params.dst_* and frame width is set up");
+				ImGui::Text("the vertex coord will be generated automatically"); });
         if (params->will_autogen_frame_wh.data == true)
         {
             params->frame_height.data = params->shader_params->dst_Height.data;
             params->frame_width.data = params->shader_params->dst_Width.data;
         }
     }
-
+    std::string &GetVsSrcFile()override{ return params->vsSrc.data;}
+    std::string &GetFsSrcFile()override{ return params->fsSrc.data;}
 private:
     ~NV12_to_RGB(){
 
@@ -347,8 +460,8 @@ struct Test_Render_Task : public I_Render_Task
     {
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-        
-        auto temp_use=program.temp_use();
+
+        auto temp_use = program.temp_use();
         std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<3>(
             params->shader_params->HL.data, params->shader_params->HR.data,
             params->shader_params->VL.data, params->shader_params->VR.data);
@@ -372,4 +485,6 @@ struct Test_Render_Task : public I_Render_Task
 
         });
     }
+    std::string &GetVsSrcFile()override{ return params->vsSrc.data;}
+    std::string &GetFsSrcFile()override{ return params->fsSrc.data;}
 };

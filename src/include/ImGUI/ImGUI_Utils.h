@@ -59,6 +59,16 @@ concept Qualified_Be_Wrapped = requires(T t) {
 };
 
 /*****************************************************************************************/
+/********************  genric  helper    ********************************************/
+/*****************************************************************************************/
+    // generic operator ==
+template<typename DataType>requires requires(std::decay_t<DataType>const& t){ 
+	t.GetAllAttr();
+}
+inline bool operator==(DataType l,DataType r) {
+    return l.GetAllAttr()==r.GetAllAttr();
+}
+/*****************************************************************************************/
 /********************  genric  Type Wrapper  ********************************************/
 /*****************************************************************************************/
 template <typename T>
@@ -69,7 +79,7 @@ struct Base_Type_Wrapper {
 	Base_Type_Wrapper(const string& name, T data, int flag) :name(name), flag(flag), data(data) {}
 	auto GetName() const { return name; }
 	auto GetFlag() const { return flag; }
-	std::remove_reference_t<T>* operator->() {
+	std::remove_reference_t<T>* operator->()const {
 		return &data;
 	}
 	bool operator==(const Base_Type_Wrapper& ot)const {
@@ -142,8 +152,10 @@ struct Universal_Type_Wrapper<T> :public Base_Type_Wrapper<T>
 {
 	using ValueType = T;
 	using DT = std::remove_reference_t<ValueType>;
-	Universal_Type_Wrapper(const string& name, T data, int flag = ImGuiInputTextFlags_AllowTabInput)
-		:Base_Type_Wrapper<T>(name, data, flag) {}
+	Universal_Type_Wrapper(const string& name, T data, int flag = ImGuiInputTextFlags_AllowTabInput,int line_count=2)
+		:Base_Type_Wrapper<T>(name, data, flag),line_count(line_count) {}
+	int line_count;
+	auto GetLineCount()const{return line_count;}
 };
 
 // show in checkbox
@@ -164,6 +176,7 @@ struct Type_Combo {
 		auto c = choosed<int(options.size());
 		return std::make_pair(c, c ? options[choosed] : nullptr);
 	}
+	bool operator==(const Type_Combo&)const=default;
 };
 /*****************************************************************************************/
 /**************************  Univeral Group Wrapper  *************************************/
@@ -234,7 +247,7 @@ template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
 		temp = data;
 		auto name_hints = t.GetName() + ":";
 		ImGui::Text(name_hints.c_str());
-		ImGui::InputTextMultiline(t.GetName().c_str(), const_cast<char*>(temp.data()), temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 2), t.GetFlag());
+		ImGui::InputTextMultiline(t.GetName().c_str(), const_cast<char*>(temp.data()), temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * t.GetLineCount()), t.GetFlag());
 		data = temp.data();
 	}
 	else if constexpr (std::is_same_v<RRT, Type_Combo>)

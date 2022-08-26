@@ -24,7 +24,7 @@ int tmain()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
 	// Create window with graphics context
-	GLFWwindow *window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(1280, 720, "Shader Test Frame", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	Light::OpenGLContext context = window;
@@ -72,7 +72,8 @@ int tmain()
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
-
+	
+		const Universal_Type_Wrapper<Type_Combo> c{ "",{}};
 		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
