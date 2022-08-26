@@ -157,7 +157,7 @@ public:
 
     // use for in-app editoring shader source
    // Universal_Type_Wrapper<string > ss={"fs", "", ImGuiInputTextFlags_AllowTabInput,40};
-    Cache_Type_Wrapper<string> fsSrcContent = {"fs", "", ImGuiInputTextFlags_AllowTabInput,60};
+    Cache_Type_Wrapper<string> fsSrcContent = {"fs", "", ImGuiInputTextFlags_AllowTabInput,40};
     CachingWrapper<bool> fsSrcShowing = false;
     CachingWrapper<string> fsSrcFilePath = {};
     void ResetShowingSrc(bool showHa, const string &fsSrcFile)
@@ -224,7 +224,7 @@ public:
     struct CC_Options : public Check_Render_Task_Completeness<CC_Options>
     {
         Universal_Type_Wrapper<Type_Combo> shader_refresh_mode = {"refresh", Type_Combo{{"each frame", "when change", "every custom length"}}};
-        Universal_Type_Wrapper<bool> show_editor = {"show editor", true};
+        Universal_Type_Wrapper<bool> show_editor = {"show editor", false};
         Universal_Type_Wrapper<bool> show_compile_output = {"show compile", true};
         auto GetAllAttr() const { return std::tie(shader_refresh_mode, show_editor, show_compile_output); }
     };

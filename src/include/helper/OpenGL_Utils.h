@@ -255,12 +255,23 @@ struct CachingWrapper : public BuiltIn_Wrapper<T>
             SetCache(data);
         return ret;
     }
-    DataType* operator->(){
-        return &base::GetData();
+    // DataType* operator->(){
+    //     return &base::GetData();
+    // }
+    // const DataType* operator->()const{
+    //     return &base::GetData();
+    // }
+    //  operator DataType&(){return base::operator DataType&();}
+    auto operator ->()
+    requires requires(DataType dt){
+        dt.operator->();
+    }{
+        return base::GetData().operator->();
     }
-    const DataType* operator->()const{
-        return &base::GetData();
+    auto operator ->() const
+    requires requires(const DataType dt){
+        dt.operator->();
+    }{
+        return base::GetData().operator->();
     }
-     operator DataType&(){return base::operator DataType&();}
-    
 };

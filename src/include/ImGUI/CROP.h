@@ -35,7 +35,7 @@ struct CROP : public I_Render_Task
     CROP(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
         : I_Render_Task(name, vsSrc, fsSrc, cc) {}
 
-    Universal_Group_Wrapper<SettingParams> params = {"CROP", SettingParams{}};
+    Cache_Group_Wrapper<SettingParams> params = {"CROP", SettingParams{}};
     // texture obj
     TextureObject tex = {-1, 0};
 
@@ -47,7 +47,6 @@ struct CROP : public I_Render_Task
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
         auto temp_use = program.temp_use();
-
         // calc vertex position
         float fh = params->frame_height.data, dh = params->shader_params->dst_Height.data;
         float fw = params->frame_width.data, dw = params->shader_params->dst_Width.data;
