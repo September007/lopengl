@@ -441,10 +441,10 @@ struct Test_Render_Task : public I_Render_Task
         struct ShaderParams
         {
             Universal_Type_Wrapper<string> texturePath = {"aTexture", R"(F:/BMP/9.dib)"};
-            Universal_Type_Wrapper<float> HL = {"vertex horizontal X", 1, -1, 1};
-            Universal_Type_Wrapper<float> HR = {"vertex horizontal Y", -1, -1, 1};
-            Universal_Type_Wrapper<float> VL = {"vertex vertical X", 1, -1, 1};
-            Universal_Type_Wrapper<float> VR = {"vertex vertical Y", -1, -1, 1};
+            Universal_Type_Wrapper<float> HL = {"vertex horizontal X", -1, -1, 1};
+            Universal_Type_Wrapper<float> HR = {"vertex horizontal Y", 1, -1, 1};
+            Universal_Type_Wrapper<float> VL = {"vertex vertical X", -1, -1, 1};
+            Universal_Type_Wrapper<float> VR = {"vertex vertical Y",  1, -1, 1};
             auto GetAllAttr() const { return std::tie(texturePath, HL, HR, VL, VR); }
         };
         Universal_Group_Wrapper<ShaderParams> shader_params = {"shader params", {}};

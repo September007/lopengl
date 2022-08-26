@@ -280,6 +280,9 @@ namespace Helper
     }
     inline auto CreateTexture(GLuint textureTarget, const std::string &dataFile)
     {
+        static ScopeObject setting={[]{
+            stbi_set_flip_vertically_on_load(true);
+        },nullptr};
         int width, height, nChannels;
         auto data = stbi_load(dataFile.c_str(), &width, &height, &nChannels, 0);
         auto ret = CreateTexture(textureTarget, data, width, height, nChannels);

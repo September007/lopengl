@@ -55,15 +55,15 @@ int tmain()
 	// 					readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
 	// 					&cc),
 	// 	&I_Render_Task::I_Render_Task_Deleter));
+	cc.AddTask(std::shared_ptr<I_Render_Task>(new CROP("crop",
+													   readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl"),
+													   readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl"),
+													   &cc),
+											  &I_Render_Task::I_Render_Task_Deleter));
 	cc.AddTask(std::shared_ptr<Test_Render_Task>(
 		new Test_Render_Task("Test_Render_Task",
 							 readFile("../media/shaders/quick_use_simple/this.vs.glsl"),
 							 readFile("../media/shaders/quick_use_simple/this.fs.glsl"),
-							 &cc),
-		&I_Render_Task::I_Render_Task_Deleter));
-		cc.AddTask(std::shared_ptr<I_Render_Task>(new CROP("crop",
-						readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl"),
-						readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl"),
 							 &cc),
 		&I_Render_Task::I_Render_Task_Deleter));
 	// Main loop
@@ -72,8 +72,8 @@ int tmain()
 
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
-	
-		const Universal_Type_Wrapper<Type_Combo> c{ "",{}};
+
+		const Universal_Type_Wrapper<Type_Combo> c{"", {}};
 		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();

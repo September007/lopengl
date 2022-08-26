@@ -205,9 +205,9 @@ template <typename T>
 requires std::is_class_v<T>
 struct BuiltIn_Wrapper<T> : public std::decay_t<T>
 {
-    using base=std::decay_t<T>;
-    auto &GetData() { return *static_cast <base* > (this); }
-    auto &GetData() const { return *static_cast < base const * > (this); }
+    using base = std::decay_t<T>;
+    auto &GetData() { return *static_cast<base *>(this); }
+    auto &GetData() const { return *static_cast<base const *>(this); }
 };
 
 // builting type can't be deriving, so use this BuiltIn_Wrapper
@@ -262,16 +262,18 @@ struct CachingWrapper : public BuiltIn_Wrapper<T>
     //     return &base::GetData();
     // }
     //  operator DataType&(){return base::operator DataType&();}
-    auto operator ->()
-    requires requires(DataType dt){
+    auto operator->() requires requires(DataType dt)
+    {
         dt.operator->();
-    }{
+    }
+    {
         return base::GetData().operator->();
     }
-    auto operator ->() const
-    requires requires(const DataType dt){
+    auto operator->() const requires requires(const DataType dt)
+    {
         dt.operator->();
-    }{
+    }
+    {
         return base::GetData().operator->();
     }
 };
