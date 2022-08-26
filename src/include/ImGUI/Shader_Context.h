@@ -266,7 +266,8 @@ struct NV12_to_RGB : public I_Render_Task
     {
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-        program.use();
+       
+        auto temp_use=program.temp_use();
 
         // calc vertex position
         // xucl todo: use operator-> to simplify the longy reference like xxx.data.yyy to xxx->yyy
@@ -285,7 +286,6 @@ struct NV12_to_RGB : public I_Render_Task
         // there would be a overwriting behaviour on this GL_TEXTURE1
         // xucl todo: here generate yuv data by hand
         tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texture_path.data);
-        program.use();
         // program.setInt(params->shader_params->)
         return true;
     }
@@ -347,7 +347,8 @@ struct Test_Render_Task : public I_Render_Task
     {
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-        program.use();
+        
+        auto temp_use=program.temp_use();
         std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<3>(
             params->shader_params->HL.data, params->shader_params->HR.data,
             params->shader_params->VL.data, params->shader_params->VR.data);
@@ -363,7 +364,6 @@ struct Test_Render_Task : public I_Render_Task
         vbo->setLayout(layout);
         vao->addVertexBuffer(vbo);
         vao->setIndexBuffer(veo);
-        program.unuse();
         return true;
     }
     void ShowConfig()

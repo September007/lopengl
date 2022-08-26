@@ -1,6 +1,10 @@
 #pragma once
 #include <ImGUI/Shader_Context.h>
 
+template <typename T>
+using Cache_Type_Wrapper = CachingWrapper<Universal_Type_Wrapper<T>>;
+template <typename T>
+using Cache_Group_Wrapper = CachingWrapper<Universal_Group_Wrapper<T>>;
 struct CROP : public I_Render_Task
 {
     struct SettingParams : Check_Render_Task_Completeness<SettingParams>
@@ -24,30 +28,36 @@ struct CROP : public I_Render_Task
         Universal_Type_Wrapper<int> frame_height = {"frame height", 1080, 256, 2048, 256};
         Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl)"};
         Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl)"};
-
-        auto GetAllAttr() { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
+        auto GetAllAttr() const{ return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
+        friend bool operator==(SettingParams const  &t, SettingParams const &ot)
+        {
+            auto ta = t.GetAllAttr(), ota = ot.GetAllAttr();
+            return ta == ota;
+        }
     };
     CROP(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
         : I_Render_Task(name, vsSrc, fsSrc, cc) {}
 
-    Universal_Group_Wrapper<SettingParams> params = {"CROP", {}};
+    Cache_Group_Wrapper<SettingParams> params = {"CROP", SettingParams{}};
     // texture obj
     TextureObject tex = {-1, 0};
 
     bool PrepareExecutingParameters() override
     {
+        if (params.Sync())
+            return true;
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-        program.use();
+        auto temp_use = program.temp_use();
 
         // calc vertex position
         float fh = params->frame_height.data, dh = params->shader_params->dst_Height.data;
         float fw = params->frame_width.data, dw = params->shader_params->dst_Width.data;
-        auto vx = dw / fw * 2, vy = dh / fh * 2 ;
-        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1,-1+vx,1-vy, 1);
+        auto vx = dw / fw * 2, vy = dh / fh * 2;
+        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1, -1 + vx, 1 - vy, 1);
 
         std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<3>(
-            -1,1,-1,1);
+            -1, 1, -1, 1);
         Light::BufferLayout layout = {
             Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
             Light::BufferElement(Light::ShaderDataType::Float2, "TextureUV", false)};
@@ -60,28 +70,29 @@ struct CROP : public I_Render_Task
         vbo->setLayout(layout);
         vao->addVertexBuffer(vbo);
         vao->setIndexBuffer(veo);
-        auto unis=program.getUniforms();
-        checkExist(program,params->shader_params->texture_path.GetName());
+        auto unis = program.getUniforms();
+        checkExist(program, params->shader_params->texture_path.GetName());
         SetProgramParam(program, params->shader_params->roi_x);
         SetProgramParam(program, params->shader_params->roi_y);
         SetProgramParam(program, params->shader_params->overlay_Height);
         SetProgramParam(program, params->shader_params->overlay_Width);
 
-        program.unuse();
         return true;
     }
     void Execute() override
     {
-        program.use();
+        auto temp_use = program.temp_use();
         vao->bind();
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (GLuint *)0 + 3);
         GL_ERROR_STOP();
         vao->unbind();
-        glUseProgram(0);
     }
     void ShowConfig() override
     {
+        using T = decltype(params);
+        constexpr bool x[] = {
+            Visible_Attr_Group_Type<T>};
         // constexpr bool s=std::is_integral_v<bool>;
         Draw_element(params, []
                      {

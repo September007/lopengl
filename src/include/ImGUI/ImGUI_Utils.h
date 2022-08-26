@@ -194,6 +194,9 @@ struct Universal_Group_Wrapper{
     std::remove_reference_t<T>* operator->(){
         return &data;
     }
+    bool operator==(Universal_Group_Wrapper const & ot)const{
+        return name==ot.name&&flag==ot.flag&&data==ot.data;
+    }
     // more customed attr
 };
 
@@ -202,8 +205,7 @@ struct Universal_Group_Wrapper{
 /*****************************************************************************************/
 // clang-format on
 template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
-requires !Visible_Attr_Group_Type<T>
-inline void Draw_element(T &t)
+requires !Visible_Attr_Group_Type<T> inline void Draw_element(T & t)
 {
     using RRT = std::remove_reference_t<typename T::ValueType>;
     auto &data = t.data;
@@ -214,27 +216,27 @@ inline void Draw_element(T &t)
     // here check bool first, cuz integeral vals maybe generic handling in the future
     else if constexpr (std::is_same_v<RRT, bool>)
     {
-        ImGui::Checkbox(t.GetName().c_str(),&t.data);
+        ImGui::Checkbox(t.GetName().c_str(), &t.data);
     }
     else if constexpr (std::is_same_v<RRT, int>)
     {
-       // ImGui::SliderInt(t.GetName().c_str(), &data, t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
-     ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
+        // ImGui::SliderInt(t.GetName().c_str(), &data, t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
+        ImGui::DragInt(t.GetName().c_str(), &data, t.GetSpeed(), t.GetMin(), t.GetMax(), t.GetFormat(), t.GetFlag());
     }
     else if constexpr (std::is_same_v<RRT, std::string>)
     {
-        int len=data.length(),temp_len=len*1.5+10;
+        int len = data.length(), temp_len = len * 1.5 + 10;
         string temp;
         temp.reserve(temp_len);
-        temp=data;
-        auto name_hints=t.GetName()+":";
+        temp = data;
+        auto name_hints = t.GetName() + ":";
         ImGui::Text(name_hints.c_str());
-        ImGui::InputTextMultiline(t.GetName().c_str(),const_cast<char*>(temp.data()),temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 2),t.GetFlag());
-        data=temp.data();
+        ImGui::InputTextMultiline(t.GetName().c_str(), const_cast<char *>(temp.data()), temp_len, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 2), t.GetFlag());
+        data = temp.data();
     }
     else if constexpr (std::is_same_v<RRT, Type_Combo>)
     {
-        ImGui::Combo(t.GetName().c_str(),&t->choosed, t->options.data(),t->options.size());    
+        ImGui::Combo(t.GetName().c_str(), &t->choosed, t->options.data(), t->options.size());
     }
     else if constexpr (std::is_same_v<T, T>)
     {
@@ -256,7 +258,7 @@ namespace
     }
 }
 template <Visible_Attr_Group_Type T>
-inline void Draw_element(T &t,std::function<void()> beforeAttr=nullptr)
+inline void Draw_element(T &t, std::function<void()> beforeAttr = nullptr)
 {
     static_assert(Qualified_Be_Wrapped<Example_Group_Type>,
                   "Example_Group_Type shoudl be qualified as Visible_Attr_Group_Type");
@@ -264,7 +266,8 @@ inline void Draw_element(T &t,std::function<void()> beforeAttr=nullptr)
     auto &data = t.data;
     if (ImGui::CollapsingHeader(t.GetName().c_str(), t.GetFlag()))
     {
-        if(beforeAttr!=nullptr){
+        if (beforeAttr != nullptr)
+        {
             beforeAttr();
         }
         auto attrs = t.GetAllAttr();
@@ -272,4 +275,3 @@ inline void Draw_element(T &t,std::function<void()> beforeAttr=nullptr)
         ImGui::Separator();
     }
 }
-

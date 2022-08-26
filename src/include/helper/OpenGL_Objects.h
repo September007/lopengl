@@ -5,6 +5,8 @@
 #include <context.hpp>
 #include <GLFW/glfw3.h>
 #include <helper/error.h>
+#include <helper/msg_center.h>
+#include <helper/macro_util.h>
 using namespace std::literals;
 template <bool strict_ = STRICT_>
 struct ShaderObject
@@ -102,8 +104,24 @@ struct ProgramObject
             if (ret != GL_TRUE)
                 throw std::runtime_error("program link failed:\n\t" + tempInfo);
     }
-    void use() { glUseProgram(getProgram()); }
-    void unuse() { glUseProgram(0); }
+    DebugArea(static inline std::atomic<int> use_cnt = 0;);
+    void use()
+    {
+        DebugArea(ASSERT(use_cnt==0));
+        glUseProgram(getProgram());
+        DebugArea(use_cnt++;);
+    }
+    void unuse()
+    {
+        DebugArea(ASSERT(use_cnt==1));
+        glUseProgram(0);
+        DebugArea(use_cnt--);
+    }
+    [[nodiscard]] auto temp_use()
+    {
+        // here could report something
+        return ScopeObject([this]{ this->use(); }, [this] {  this->unuse(); });
+    }
     GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
     {

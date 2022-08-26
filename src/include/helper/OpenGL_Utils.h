@@ -19,11 +19,14 @@
 #define STRICT_ true
 
 #include <iostream>
-#define rreport_error(msg) do{std::cerr<<"at "<<__FILE__<<":"\
-        <<__LINE__<<std::endl<<(msg)<<std::endl;\
-        throw std::runtime_error(msg);}while(0)
-
-
+#define rreport_error(msg)                    \
+    do                                        \
+    {                                         \
+        std::cerr << "at " << __FILE__ << ":" \
+                  << __LINE__ << std::endl    \
+                  << (msg) << std::endl;      \
+        throw std::runtime_error(msg);        \
+    } while (0)
 
 template <bool strict_ = STRICT_>
 inline auto readFile(const std::string &f) -> std::string
@@ -86,11 +89,11 @@ inline auto getAttributes(GLint program)
 }
 
 inline int error;
-#define GL_ERROR_STOP()                               \
-    {                                                 \
-        error = glGetError();                         \
-        if (error != 0)                               \
-            rreport_error("gl get error: "+std::to_string(error)); \
+#define GL_ERROR_STOP()                                              \
+    {                                                                \
+        error = glGetError();                                        \
+        if (error != 0)                                              \
+            rreport_error("gl get error: " + std::to_string(error)); \
     }
 // \ret
 // ret==0: success
@@ -185,3 +188,31 @@ std::string toRGB(UNIT *data, int pixelLength)
     }
     return ret;
 }
+
+
+template <typename T>
+struct CachingWrapper:public T{
+    T cache;
+    template<typename ...ArgsT>
+    CachingWrapper(ArgsT&&...ags) :T(std::forward<ArgsT>(ags)...), cache(std::forward<ArgsT>(ags)...) {}
+
+    auto& GetCache() { return  cache; }
+    template <typename Any>
+    auto SetCache(Any&& c) { GetCache() = std::forward<Any>(c); }
+    bool isSameAsCache() {
+        // CRTP
+        // as soon as this class is virtual, when derived class call this ,
+        // transing to derived class should always work, just be sure derived class  
+        // declare like class DC:... CachingObject<DC>
+        // so , there is static_cast, not dynamic_cast
+        return *static_cast<T*>(this) == GetCache();
+    }
+    // return isSameAsCache, but will also set Cache when there is diffs 
+    bool Sync() {
+        auto ret = isSameAsCache();
+        if (!ret)
+            SetCache(*static_cast<T*>(this));
+        return ret;
+    }
+};
+
