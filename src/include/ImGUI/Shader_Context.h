@@ -61,11 +61,13 @@ inline auto detailed_simpleV_ABE_O(float HL = -1, float HR = 1, float VL = -1, f
 		HR,VR,0,THR,TVR,
 		HR,VL,0,THR,TVL,
 	};
+    // fatal attention: the fourth coord of vec4-vertex-position should only be 1
+    // this is needed for coordinate transing
 	float vertices4[] = {
-		HL,VL,0,0,THL,TVL,
-		HL,VR,0,0,THL,TVR,
-		HR,VR,0,0,THR,TVR,
-		HR,VL,0,0,THR,TVL,
+		HL,VL,0,1,THL,TVL,
+		HL,VR,0,1,THL,TVR,
+		HR,VR,0,1,THR,TVR,
+		HR,VL,0,1,THR,TVL,
 	};
 	//std::memcpy(svs,vertices,sizeof(svs)*sizeof(float));
 	//static uint32_t sis[6];

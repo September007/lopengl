@@ -53,8 +53,7 @@ struct CROP : public I_Render_Task
         auto vx = dw / fw * 2, vy = dh / fh * 2;
         std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1, -1 + vx, 1 - vy, 1);
 
-        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<3>(
-            -1, 1, -1, 1);
+        //std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1, 1, -1, 1);
         Light::BufferLayout layout = {
             Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
             Light::BufferElement(Light::ShaderDataType::Float2, "TextureUV", false)};
