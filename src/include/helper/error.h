@@ -68,7 +68,7 @@ namespace error_map
         constexpr static std::string error_desc = fmt::format("[{}] {}.{}:", ec_msg[ec], oc_msg[oc], mc_msg[mc]);
         return error_desc;
     }
-    auto msg_mapping(error_code ec, object_code oc, message_code mc)
+    inline auto msg_mapping(error_code ec, object_code oc, message_code mc)
     {
         std::string error_desc = fmt::format("[{}] {}.{}:", ec_msg[ec], oc_msg[oc], mc_msg[mc]);
         return error_desc;
@@ -85,7 +85,7 @@ namespace error_map
         bool operator< (code_packet const&) const =default;
         std::strong_ordering operator<=>(const code_packet&) const = default;
     };
-    auto msg_mapping(code_packet cp)
+    inline auto msg_mapping(code_packet cp)
     {
         return msg_mapping(cp.ec, cp.oc, cp.mc);
     }
@@ -141,7 +141,7 @@ namespace error_map
     private:
         Code_Recorder(){};
     };
-    void report_error(error_code ec, object_code oc, message_code mc, const string &msg)
+    inline void report_error(error_code ec, object_code oc, message_code mc, const string &msg)
     {
         desc_packet p = {clock::now(), {ec, oc, mc}, msg};
         // do something before record it

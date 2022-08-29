@@ -137,29 +137,28 @@ public:
     virtual bool PrepareExecutingParameters() = 0;
     virtual void Execute()
     {
-        glUseProgram(program.getProgram());
+        auto temp_use = program.temp_use();
         vao->bind();
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (GLuint *)0 + 3);
         GL_ERROR_STOP();
         vao->unbind();
-        glUseProgram(0);
-    };
+    }
     virtual void ShowConfig() = 0;
     // forbid stack creating
     static void I_Render_Task_Deleter(I_Render_Task *p)
     {
         delete p;
     }
-    virtual std::string &GetVsSrcFile()=0;
-    virtual std::string &GetFsSrcFile()=0;
+    virtual std::string &GetVsSrcFile() = 0;
+    virtual std::string &GetFsSrcFile() = 0;
     std::shared_ptr<Light::VertexArray> vao;
     std::shared_ptr<Light::VertexBuffer> vbo;
     std::shared_ptr<Light::IndexBuffer> veo;
 
     // use for in-app editoring shader source
-   // Universal_Type_Wrapper<string > ss={"fs", "", ImGuiInputTextFlags_AllowTabInput,40};
-    Cache_Type_Wrapper<string> fsSrcContent = {"fs", "", ImGuiInputTextFlags_AllowTabInput,40};
+    // Universal_Type_Wrapper<string > ss={"fs", "", ImGuiInputTextFlags_AllowTabInput,40};
+    Cache_Type_Wrapper<string> fsSrcContent = {"fs", "", ImGuiInputTextFlags_AllowTabInput, 40};
     CachingWrapper<bool> fsSrcShowing = false;
     CachingWrapper<string> fsSrcFilePath = {};
     void ResetShowingSrc(bool showHa, const string &fsSrcFile)
@@ -167,9 +166,10 @@ public:
         auto chgShow = !fsSrcShowing.Sync(showHa);
         auto oldPath = fsSrcFilePath.GetData();
         auto ChgSrc = !fsSrcFilePath.Sync(fsSrcFile);
-        auto chgContent=fsSrcContent.SyncCache();
+        auto chgContent = fsSrcContent.SyncCache();
         // showing and  content change
-        if(showHa&&!chgShow&&chgContent){
+        if (showHa && !chgShow && chgContent)
+        {
             writeFile(fsSrcFilePath.GetData(), fsSrcContent.GetData().data);
         }
         // with no change happening, just return
@@ -202,7 +202,7 @@ public:
         ResetShowingSrc(showHa, fsSrcFile);
         if (!showHa)
             return;
-        if (ImGui::Begin(fmt::format("{} fs",GetName()).c_str()))
+        if (ImGui::Begin(fmt::format("{} fs", GetName()).c_str()))
         {
             Draw_element(fsSrcContent);
         }
@@ -250,22 +250,6 @@ public:
             {
                 // 1. shader option
                 ShowConfig();
-                // 2. shader exexcute
-                auto execute_one = [](std::shared_ptr<I_Render_Task> &task)
-                {
-                    try
-                    {
-                        task->PrepareExecutingParameters();
-                        task->Execute();
-                    }
-                    catch (std::exception &e)
-                    {
-                        std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
-                    }
-                };
-                // config will list all the tasks out, and a checkbox is for this selecting;
-                // current time this only support choose one or all.
-                _Current_Choosed_Task_Relevant(execute_one);
                 // 3. compiler options
                 if (ImGui::BeginTabItem("compile"))
                 {
@@ -275,6 +259,22 @@ public:
                 ImGui::EndTabBar();
             }
         }
+        // 2. shader exexcute
+        auto execute_one = [](std::shared_ptr<I_Render_Task> &task)
+        {
+            try
+            {
+                task->PrepareExecutingParameters();
+                task->Execute();
+            }
+            catch (std::exception &e)
+            {
+                std::cerr << fmt::format("catch error: {}", e.what()) << std::endl;
+            }
+        };
+        // config will list all the tasks out, and a checkbox is for this selecting;
+        // current time this only support choose one or all.
+        _Current_Choosed_Task_Relevant(execute_one);
         ImGui::End();
         // show editor
         _Show_FS_Editor();
@@ -315,7 +315,7 @@ public:
     }
 
 protected:
-    void  _Current_Choosed_Task_Relevant(std::function<void(std::shared_ptr<I_Render_Task> &)> fn)
+    void _Current_Choosed_Task_Relevant(std::function<void(std::shared_ptr<I_Render_Task> &)> fn)
     {
         // obtain data from option, change currentTaskName only if it's useable
         auto op = which_shader->GetChoosedOption();
@@ -328,110 +328,23 @@ protected:
         {
             std::shared_ptr<I_Render_Task> cs;
             if (auto p = tasks.find(currentTaskName); p != tasks.end())
-                cs=p->second;
+                cs = p->second;
             else if (tasks.size())
-                cs=tasks.begin()->second;
+                cs = tasks.begin()->second;
             fn(cs);
         }
     }
-    void _Show_FS_Editor(){
-        auto chgOptions=!cc_options.isSameAsCache();
-        if(!chgOptions)return;
-        auto show_fs_editor=[this](std::shared_ptr<I_Render_Task> &t){
-            t->ShowSrc(this->cc_options.data.show_editor.data,t->GetFsSrcFile());
+    void _Show_FS_Editor()
+    {
+        auto chgOptions = !cc_options.isSameAsCache();
+        if (!chgOptions)
+            return;
+        auto show_fs_editor = [this](std::shared_ptr<I_Render_Task> &t)
+        {
+            t->ShowSrc(this->cc_options.data.show_editor.data, t->GetFsSrcFile());
         };
         _Current_Choosed_Task_Relevant(show_fs_editor);
     }
-};
-
-struct NV12_to_RGB : public I_Render_Task
-{
-    struct SettingParams : Check_Render_Task_Completeness<SettingParams>
-    {
-        struct Shader_Params
-        {
-            // could be set on outside
-            Universal_Type_Wrapper<string> texture_path = {"texture", R"(F:/BMP/9.dib)"};
-            Universal_Type_Wrapper<int> mode = {"mode", 0, 0, 3, 0.1};
-            Universal_Type_Wrapper<int> dst_Width = {"dst_Width", 512, 256, 2048, 256};
-            Universal_Type_Wrapper<int> dst_Height = {"dst_Height", 512, 256, 2048, 256};
-            // generated by texture
-            Universal_Type_Wrapper<int> overlay_Width = {"overlay_Width", 512, 256, 2048, 256};
-            Universal_Type_Wrapper<int> overlay_Height = {"overlay_Height", 512, 256, 2048, 256};
-            auto GetAllAttr() const { return std::tie(texture_path, mode, dst_Width, dst_Height, overlay_Width, overlay_Height); }
-        };
-        Universal_Group_Wrapper<Shader_Params> shader_params = {"Shader params", {}};
-        Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
-        Universal_Type_Wrapper<int> frame_width = {"frame width", 1920, 256, 2048, 256};
-        Universal_Type_Wrapper<int> frame_height = {"frame height", 1080, 256, 2048, 256};
-        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl)"};
-        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl)"};
-
-        auto GetAllAttr() const { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
-    };
-    NV12_to_RGB(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
-        : I_Render_Task(name, vsSrc, fsSrc, cc) {}
-
-    Universal_Group_Wrapper<SettingParams> params = {"NV12_to_RGB", {}};
-    // texture obj
-    TextureObject tex = {-1, 0};
-
-    bool PrepareExecutingParameters() override
-    {
-        program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
-                                        ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));
-
-        auto temp_use = program.temp_use();
-
-        // calc vertex position
-        // xucl todo: use operator-> to simplify the longy reference like xxx.data.yyy to xxx->yyy
-        float fh = params->frame_height.data, dh = params->shader_params->dst_Height.data;
-        float fw = params->frame_width.data, dw = params->shader_params->dst_Width.data;
-        auto vx = dw / fw * 2 - 1, vy = dh / fh * 2 - 1;
-        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(0, vx, -vy, 0);
-
-        Light::BufferLayout layout = {
-            Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
-            Light::BufferElement(Light::ShaderDataType::Float2, "TextureUV", false)};
-        vbo->setLayout(layout);
-        vao->addVertexBuffer(vbo);
-        vao->setIndexBuffer(veo);
-        // xucl error: if all the shaders binding the same GL_TEXTURE1, in the serial calling in cc.Tick()
-        // there would be a overwriting behaviour on this GL_TEXTURE1
-        // xucl todo: here generate yuv data by hand
-        tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texture_path.data);
-        // program.setInt(params->shader_params->)
-        return true;
-    }
-    void Execute() override
-    {
-        glUseProgram(program.getProgram());
-        vao->bind();
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (GLuint *)0 + 3);
-        GL_ERROR_STOP();
-        vao->unbind();
-        glUseProgram(0);
-    }
-    void ShowConfig() override
-    {
-        // constexpr bool s=std::is_integral_v<bool>;
-        Draw_element(params, []
-                     {
-				ImGui::Text("when Shader-params.dst_* and frame width is set up");
-				ImGui::Text("the vertex coord will be generated automatically"); });
-        if (params->will_autogen_frame_wh.data == true)
-        {
-            params->frame_height.data = params->shader_params->dst_Height.data;
-            params->frame_width.data = params->shader_params->dst_Width.data;
-        }
-    }
-    std::string &GetVsSrcFile()override{ return params->vsSrc.data;}
-    std::string &GetFsSrcFile()override{ return params->fsSrc.data;}
-private:
-    ~NV12_to_RGB(){
-
-    };
 };
 
 struct Test_Render_Task : public I_Render_Task
@@ -446,7 +359,7 @@ struct Test_Render_Task : public I_Render_Task
             Universal_Type_Wrapper<float> HL = {"vertex horizontal X", -1, -1, 1};
             Universal_Type_Wrapper<float> HR = {"vertex horizontal Y", 1, -1, 1};
             Universal_Type_Wrapper<float> VL = {"vertex vertical X", -1, -1, 1};
-            Universal_Type_Wrapper<float> VR = {"vertex vertical Y",  1, -1, 1};
+            Universal_Type_Wrapper<float> VR = {"vertex vertical Y", 1, -1, 1};
             auto GetAllAttr() const { return std::tie(texturePath, HL, HR, VL, VR); }
         };
         Universal_Group_Wrapper<ShaderParams> shader_params = {"shader params", {}};
@@ -487,6 +400,6 @@ struct Test_Render_Task : public I_Render_Task
 
         });
     }
-    std::string &GetVsSrcFile()override{ return params->vsSrc.data;}
-    std::string &GetFsSrcFile()override{ return params->fsSrc.data;}
+    std::string &GetVsSrcFile() override { return params->vsSrc.data; }
+    std::string &GetFsSrcFile() override { return params->fsSrc.data; }
 };

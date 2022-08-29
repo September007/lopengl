@@ -5,6 +5,7 @@
 #include <cmath>
 #include <ImGUI/Shader_Context.h>
 #include <ImGUI/CROP.h>
+#include <ImGUI/NV12_to_RGB.h>
 static void glfw_error_callback(int error, const char *description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -12,7 +13,7 @@ static void glfw_error_callback(int error, const char *description)
 constexpr int window_width = 1440, window_height = 900;
 using namespace std::string_literals;
 
-int tmain()
+int tmain(int ,char**)
 {
 	// Setup window
 	glfwSetErrorCallback(glfw_error_callback);
@@ -49,17 +50,18 @@ int tmain()
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	CentralController cc;
-	// cc.AddTask(std::shared_ptr<NV12_to_RGB>(
-	// 	new NV12_to_RGB("NV12_to_RGB",
-	// 					readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
-	// 					readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
-	// 					&cc),
-	// 	&I_Render_Task::I_Render_Task_Deleter));
-	cc.AddTask(std::shared_ptr<I_Render_Task>(new CROP("crop",
-													   readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl"),
-													   readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl"),
-													   &cc),
-											  &I_Render_Task::I_Render_Task_Deleter));
+	cc.AddTask(std::shared_ptr<NV12_to_RGB>(
+		new NV12_to_RGB("NV12_to_RGB",
+						readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
+						readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
+						&cc),
+		&I_Render_Task::I_Render_Task_Deleter));
+	cc.AddTask(std::shared_ptr<I_Render_Task>(
+		new CROP("crop",
+				 readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl"),
+				 readFile("../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl"),
+				 &cc),
+		&I_Render_Task::I_Render_Task_Deleter));
 	cc.AddTask(std::shared_ptr<Test_Render_Task>(
 		new Test_Render_Task("Test_Render_Task",
 							 readFile("../media/shaders/quick_use_simple/this.vs.glsl"),
@@ -108,9 +110,12 @@ int tmain()
 	return 0;
 }
 
-#include <gtest/gtest.h>
+// #include <gtest/gtest.h>
 
-TEST(test_app, main)
-{
-	tmain();
-}
+// TEST(test_app, main)
+// {
+// 	tmain();
+// }
+#include <helper/gtest_main_proxy.h>
+
+REGISTER_MAIN_PROXY(tmain);

@@ -136,11 +136,11 @@ struct ProgramObject
         tempInfo = {temp, temp + len};
         return params;
     }
-    auto getAttributes()
+    auto getAttributes()const
     {
         return ::getAttributes(getProgram());
     }
-    auto getUniforms()
+    auto getUniforms()const
     {
         std::map<std::string, AttributeInfo> ret;
         int count = 0;
@@ -161,14 +161,17 @@ struct ProgramObject
     // uniform setter
     void setBool(const std::string &name, bool value) const
     {
+        DebugArea(checkExist(getUniforms(),name));
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), (int)value);
     }
     void setInt(const std::string &name, int value) const
     {
+        DebugArea(checkExist(getUniforms(),name));
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     void setFloat(const std::string &name, float value) const
     {
+        DebugArea(checkExist(getUniforms(),name));
         glUniform1f(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     int getUniformLocation(const std::string &name)
@@ -188,6 +191,15 @@ struct ProgramObject
             locas.emplace_back(e.getName(), pos++);
         }
         bindAttributesLocations(getProgram(), locas);
+    }
+    inline bool checkExist(std::map<std::string, AttributeInfo>map, const string &name)const
+    {
+        auto ex = (map.find(name) != map.end());
+        if (!ex)
+        {
+            std::cerr << fmt::format("name {} not found\n", name) << std::endl;
+        }
+        return ex;
     }
 };
 
@@ -261,6 +273,7 @@ public:
 };
 namespace Helper
 {
+    //support RGB or RGBA
     inline auto CreateTexture(GLuint textureTarget, void *data, int width, int height, int nChannels)
     {
         GLuint texture;
@@ -278,15 +291,36 @@ namespace Helper
         ret.SetWHN(width, height, nChannels);
         return ret;
     }
+    struct stb_pic_data
+    {
+        void *data = nullptr;
+        int w, h, n;
+        static auto create_stb_pic_data(const string &filePath)
+        {
+            std::shared_ptr<stb_pic_data > ret(new stb_pic_data(),[](stb_pic_data *p){
+                if(p)
+                    stbi_image_free(p->data);
+            });
+            ret->data = stbi_load(filePath.c_str(), &ret->w, &ret->h, &ret->n, 0);
+            return ret;
+        }
+    private:
+       stb_pic_data(){}
+        ~stb_pic_data(){}
+    };
     inline auto CreateTexture(GLuint textureTarget, const std::string &dataFile)
     {
         static ScopeObject setting={[]{
             stbi_set_flip_vertically_on_load(true);
         },nullptr};
-        int width, height, nChannels;
-        auto data = stbi_load(dataFile.c_str(), &width, &height, &nChannels, 0);
-        auto ret = CreateTexture(textureTarget, data, width, height, nChannels);
-        stbi_image_free(data);
+
+        // int width, height, nChannels;
+        // auto data = stbi_load(dataFile.c_str(), &width, &height, &nChannels, 0);
+        // auto ret = CreateTexture(textureTarget, data, width, height, nChannels);
+        // stbi_image_free(data);
+        // return ret;
+        auto pic_data=stb_pic_data::create_stb_pic_data(dataFile);
+        auto ret=CreateTexture(textureTarget,pic_data->data,pic_data->w,pic_data->h,pic_data->n);
         return ret;
     }
     inline auto CreateTextureByData(GLuint textureTarget, GLenum innerFormat, GLenum format, void *data, uint32_t width, uint32_t height)
@@ -300,8 +334,12 @@ namespace Helper
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        auto ret = TextureObject(texture, textureTarget);
+  
         glTexImage2D(GL_TEXTURE_2D, 0, innerFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
+        ret.SetWHN(width,height,innerFormat<=GL_ALPHA?1:(innerFormat-GL_RGB));
+        return ret;
     };
 } // namespace Helper
 
