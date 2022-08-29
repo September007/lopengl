@@ -286,7 +286,13 @@ namespace Light
 
 		void init() override;
 		void swapBuffers() override;
+		static OpenGLContext *&CurrentContext()
+		{
+			static OpenGLContext *cur = nullptr;
+			return cur;
+		}
 
+		auto GetHandle(){return m_windowHandle;}
 	private:
 		GLFWwindow* m_windowHandle;
 	};

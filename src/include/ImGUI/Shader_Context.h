@@ -23,22 +23,25 @@ inline void checkExist(ProgramObject<true> &pro, const string &name)
         std::cerr << fmt::format("uniform {} not found\n", name) << std::endl;
     }
 }
-inline void SetProgramParam(ProgramObject<true> &pro, Universal_Type_Wrapper<int> &i)
+inline void SetProgramParam(ProgramObject<true> &pro,const Universal_Type_Wrapper<int> &i)
 {
     checkExist(pro, i.GetName());
     pro.setInt(i.GetName(), i.data);
 }
 
-inline void SetProgramParam(ProgramObject<true> &pro, Universal_Type_Wrapper<float> &i)
+inline void SetProgramParam(ProgramObject<true> &pro,const Universal_Type_Wrapper<float> &i)
 {
     checkExist(pro, i.GetName());
     pro.setFloat(i.GetName(), i.data);
 }
-
+inline void SetProgramParam(ProgramObject<true> &pro, const Universal_Type_Wrapper<std::string> &i)
+{
+    std::cout<<fmt::format("{:<10}{} is skip","SetString",i.data)<<std::endl;
+}
 template <typename T, int index = 0>
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Group_Wrapper<T> &i)
 {
-    using tupleT = decltype(Universal_Group_Wrapper<T>::GetAllAttr());
+    using tupleT = decltype(std::declval< Universal_Group_Wrapper<T>>().GetAllAttr());
     if constexpr (std::tuple_size_v<tupleT> == index)
         return;
     else
@@ -134,7 +137,7 @@ public:
     }
     auto &GetName() { return rsName; }
     // beacuse we expose the setting params on the UI, so it need reload params every frame
-    virtual bool PrepareExecutingParameters() = 0;
+    virtual bool PrepareExecutingParameters(bool force_reset=false) = 0;
     virtual void Execute()
     {
         auto temp_use = program.temp_use();
@@ -371,7 +374,7 @@ struct Test_Render_Task : public I_Render_Task
     Universal_Group_Wrapper<SettingParams> params = {"Shader Setting", {}};
     // texture obj
     TextureObject tex = {-1, 0};
-    bool PrepareExecutingParameters() override
+    bool PrepareExecutingParameters(bool force_reset=false) override
     {
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),
                                         ShaderObject(GL_FRAGMENT_SHADER, readFile(params->fsSrc.data)));

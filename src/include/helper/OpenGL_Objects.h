@@ -12,18 +12,18 @@ template <bool strict_ = STRICT_>
 struct ShaderObject
 {
     // register callback
-    inline static const ScopeObject registerCallback={
-        []{
+    inline static const ScopeObject registerCallback = {
+        []
+        {
             using namespace error_map;
-            Helper::Register(code_packet(error_code::error,object_code::shader,message_code::compile),
-            []{
+            Helper::Register(code_packet(error_code::error, object_code::shader, message_code::compile),
+                             [] {
 
-            });
+                             });
         },
-        []{
+        [] {
 
-        }
-    };
+        }};
     std::shared_ptr<GLint> shaderHandler = nullptr;
     // save state info which queried last time, the construction func would set this as compile info
     std::string tempInfo;
@@ -107,20 +107,23 @@ struct ProgramObject
     DebugArea(static inline std::atomic<int> use_cnt = 0;);
     void use()
     {
-        DebugArea(ASSERT(use_cnt==0));
+        DebugArea(ASSERT(use_cnt == 0));
         glUseProgram(getProgram());
         DebugArea(use_cnt++;);
     }
     void unuse()
     {
-        DebugArea(ASSERT(use_cnt==1));
+        DebugArea(ASSERT(use_cnt == 1));
         glUseProgram(0);
         DebugArea(use_cnt--);
     }
     [[nodiscard]] auto temp_use()
     {
         // here could report something
-        return ScopeObject([this]{ this->use(); }, [this] {  this->unuse(); });
+        return ScopeObject([this]
+                           { this->use(); },
+                           [this]
+                           { this->unuse(); });
     }
     GLint getProgram() const { return *program; }
     auto getInfo(GLenum pname)
@@ -136,11 +139,11 @@ struct ProgramObject
         tempInfo = {temp, temp + len};
         return params;
     }
-    auto getAttributes()const
+    auto getAttributes() const
     {
         return ::getAttributes(getProgram());
     }
-    auto getUniforms()const
+    auto getUniforms() const
     {
         std::map<std::string, AttributeInfo> ret;
         int count = 0;
@@ -161,17 +164,20 @@ struct ProgramObject
     // uniform setter
     void setBool(const std::string &name, bool value) const
     {
-        DebugArea(checkExist(getUniforms(),name));
+        DebugArea(checkExist(getUniforms(), name));
+        std::cerr << fmt::format("{:10}  {}   {}", "Setbool", name, value) << std::endl;
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), (int)value);
     }
     void setInt(const std::string &name, int value) const
     {
-        DebugArea(checkExist(getUniforms(),name));
+        DebugArea(checkExist(getUniforms(), name));
+        std::cerr << fmt::format("{:10}  {}   {}", "SetInt", name, value) << std::endl;
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     void setFloat(const std::string &name, float value) const
     {
-        DebugArea(checkExist(getUniforms(),name));
+        DebugArea(checkExist(getUniforms(), name));
+        std::cerr << fmt::format("{:10}  {}   {}", "SetFloat", name, value) << std::endl;
         glUniform1f(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     int getUniformLocation(const std::string &name)
@@ -192,7 +198,7 @@ struct ProgramObject
         }
         bindAttributesLocations(getProgram(), locas);
     }
-    inline bool checkExist(std::map<std::string, AttributeInfo>map, const string &name)const
+    inline bool checkExist(std::map<std::string, AttributeInfo> map, const string &name) const
     {
         auto ex = (map.find(name) != map.end());
         if (!ex)
@@ -273,7 +279,7 @@ public:
 };
 namespace Helper
 {
-    //support RGB or RGBA
+    // support RGB or RGBA
     inline auto CreateTexture(GLuint textureTarget, void *data, int width, int height, int nChannels)
     {
         GLuint texture;
@@ -297,30 +303,33 @@ namespace Helper
         int w, h, n;
         static auto create_stb_pic_data(const string &filePath)
         {
-            std::shared_ptr<stb_pic_data > ret(new stb_pic_data(),[](stb_pic_data *p){
+            std::shared_ptr<stb_pic_data> ret(new stb_pic_data(), [](stb_pic_data *p)
+                                              {
                 if(p)
-                    stbi_image_free(p->data);
-            });
+                    stbi_image_free(p->data); });
             ret->data = stbi_load(filePath.c_str(), &ret->w, &ret->h, &ret->n, 0);
             return ret;
         }
+
     private:
-       stb_pic_data(){}
-        ~stb_pic_data(){}
+        stb_pic_data() {}
+        ~stb_pic_data() {}
     };
     inline auto CreateTexture(GLuint textureTarget, const std::string &dataFile)
     {
-        static ScopeObject setting={[]{
-            stbi_set_flip_vertically_on_load(true);
-        },nullptr};
+        static ScopeObject setting = {[]
+                                      {
+                                          stbi_set_flip_vertically_on_load(true);
+                                      },
+                                      nullptr};
 
         // int width, height, nChannels;
         // auto data = stbi_load(dataFile.c_str(), &width, &height, &nChannels, 0);
         // auto ret = CreateTexture(textureTarget, data, width, height, nChannels);
         // stbi_image_free(data);
         // return ret;
-        auto pic_data=stb_pic_data::create_stb_pic_data(dataFile);
-        auto ret=CreateTexture(textureTarget,pic_data->data,pic_data->w,pic_data->h,pic_data->n);
+        auto pic_data = stb_pic_data::create_stb_pic_data(dataFile);
+        auto ret = CreateTexture(textureTarget, pic_data->data, pic_data->w, pic_data->h, pic_data->n);
         return ret;
     }
     inline auto CreateTextureByData(GLuint textureTarget, GLenum innerFormat, GLenum format, void *data, uint32_t width, uint32_t height)
@@ -335,10 +344,10 @@ namespace Helper
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         auto ret = TextureObject(texture, textureTarget);
-  
+
         glTexImage2D(GL_TEXTURE_2D, 0, innerFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        ret.SetWHN(width,height,innerFormat<=GL_ALPHA?1:(innerFormat-GL_RGB));
+        ret.SetWHN(width, height, innerFormat <= GL_ALPHA ? 1 : (innerFormat - GL_RGB));
         return ret;
     };
 } // namespace Helper

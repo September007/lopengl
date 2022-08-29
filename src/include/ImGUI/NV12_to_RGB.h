@@ -1,6 +1,8 @@
 #pragma once
 #include <ImGUI/Shader_Context.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <helper/stb_image_write.h>
 // import software colortranform
 #include <helper/color_transform.h>
 struct NV12_to_RGB : public I_Render_Task
@@ -20,7 +22,7 @@ struct NV12_to_RGB : public I_Render_Task
             auto GetAllAttr() const { return std::tie(texture_path, mode, dst_Width, dst_Height, overlay_Width, overlay_Height); }
         };
         Universal_Group_Wrapper<Shader_Params> shader_params = {"Shader params", {}};
-        Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
+        Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame&overlay&back width and height", false};
         Universal_Type_Wrapper<int> frame_width = {"frame width", 1920, 256, 2048, 256};
         Universal_Type_Wrapper<int> frame_height = {"frame height", 1080, 256, 2048, 256};
         Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl)"};
@@ -37,25 +39,28 @@ struct NV12_to_RGB : public I_Render_Task
 
     CachingWrapper<string> vsSrcContent;
     CachingWrapper<string> fsSrcContent;
-    bool PrepareExecutingParameters() override
+    bool PrepareExecutingParameters(bool force_reset=false) override
     {
-        auto chgParams=!params.SyncCache();
+        auto chgParams = !params.SyncCache();
         vsSrcContent.SetSelf(readFile(params->vsSrc.data));
         fsSrcContent.SetSelf(readFile(params->fsSrc.data));
+        if(chgParams)
+            glfwSetWindowSize(Light::OpenGLContext::CurrentContext()->GetHandle(),params->frame_width.data,params->frame_height.data);
         // params and shader source not changing, just return
         // here checking if program is 0, is to check if program had been initilize
-        if (tex.GetTTexture()!=-1&&!chgParams&&vsSrcContent.SyncCache()&&fsSrcContent.SyncCache())
+        if (!force_reset&&tex.GetTTexture() != -1 && !chgParams && vsSrcContent.SyncCache() && fsSrcContent.SyncCache())
             return true;
-        program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER,vsSrcContent ),
+        program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, vsSrcContent),
                                         ShaderObject(GL_FRAGMENT_SHADER, fsSrcContent));
         auto temp_use = program.temp_use();
 
         // calc vertex position
         // xucl todo: use operator-> to simplify the longy reference like xxx.data.yyy to xxx->yyy
-          float fh = params->frame_height.data, dh = params->shader_params->dst_Height.data;
+        float fh = params->frame_height.data, dh = params->shader_params->dst_Height.data;
         float fw = params->frame_width.data, dw = params->shader_params->dst_Width.data;
         auto vx = dw / fw * 2, vy = dh / fh * 2;
-        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1, -1 + vx, 1 - vy, 1);
+        //std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1, -1 + vx, 1 - vy, 1);
+        std::tie(vao, vbo, veo) = detailed_simpleV_ABE_O<4>(-1,1,-1,1);
 
         Light::BufferLayout layout = {
             Light::BufferElement(Light::ShaderDataType::Float4, "position", false),
@@ -67,19 +72,25 @@ struct NV12_to_RGB : public I_Render_Task
         // there would be a overwriting behaviour on this GL_TEXTURE1
         // xucl todo: here generate yuv data by hand
 
-        //tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texture_path.data);
-        auto rgb_data=Helper::stb_pic_data::create_stb_pic_data(params->shader_params->texture_path.data);
-        // nv12 / rgb = 5/12
-        auto yuv_data=std::vector<int8_t>(rgb_data->w*rgb_data->h*5/4);
-        using T=unsigned char*;
-        Rgb2NV12(T(rgb_data->data),3,rgb_data->w,rgb_data->h,T(yuv_data.data()));
-        tex = Helper::CreateTextureByData(GL_TEXTURE1,GL_ALPHA,GL_ALPHA,T(yuv_data.data()),rgb_data->w,rgb_data->h);
-        program.setInt(params->shader_params->texture_path.GetName(),tex.targetTexture-GL_TEXTURE0);
-        SetProgramParam(program,params->shader_params->mode);
-        SetProgramParam(program,params->shader_params->dst_Width);
-        SetProgramParam(program,params->shader_params->dst_Height);
-        SetProgramParam(program,params->shader_params->overlay_Width);
-        SetProgramParam(program,params->shader_params->overlay_Height);
+        // tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texture_path.data);
+        auto rgb_data = Helper::stb_pic_data::create_stb_pic_data(params->shader_params->texture_path.data);
+        // nv12 / rgb = 3/2
+        auto yuv_data = std::vector<int8_t>(rgb_data->w * rgb_data->h * 3 / 2);
+        using T = unsigned char *;
+        Rgb2NV12(T(rgb_data->data), 3, rgb_data->w, rgb_data->h, T(yuv_data.data()));
+        //stbi_write_bmp("out.bmp",1440,900,1,T(yuv_data.data()));
+        writeFile("rawYUV.YUV",std::string(T(yuv_data.data()),T(yuv_data.data())+int(rgb_data->w*rgb_data->h*1.5)));
+        auto unis = program.getUniforms();
+        auto attrs = program.getAttributes();
+        tex = Helper::CreateTextureByData(GL_TEXTURE1, GL_RED, GL_RED, T(yuv_data.data()), rgb_data->w, rgb_data->h * 1.5);
+        program.setInt(params->shader_params->texture_path.GetName(), tex.targetTexture - GL_TEXTURE0);
+        SetProgramParam(program, params->shader_params->mode);
+        SetProgramParam(program, params->shader_params->dst_Width);
+        SetProgramParam(program, params->shader_params->dst_Height);
+        SetProgramParam(program, params->shader_params->overlay_Width);
+        SetProgramParam(program, params->shader_params->overlay_Height);
+        // SetProgramParam(program,rgb_data->w);
+        // SetProgramParam(program,rgb_data->h);
         return true;
     }
 
@@ -94,10 +105,14 @@ struct NV12_to_RGB : public I_Render_Task
         {
             params->frame_height.data = params->shader_params->dst_Height.data;
             params->frame_width.data = params->shader_params->dst_Width.data;
+            params->shader_params->overlay_Height.data = params->shader_params->dst_Height.data = tex.height;
+            params->shader_params->overlay_Width.data = params->shader_params->dst_Width.data = tex.width;
+            params->shader_params->dst_Height.data /=1.5;
         }
     }
-    std::string &GetVsSrcFile()override{ return params->vsSrc.data;}
-    std::string &GetFsSrcFile()override{ return params->fsSrc.data;}
+    std::string &GetVsSrcFile() override { return params->vsSrc.data; }
+    std::string &GetFsSrcFile() override { return params->fsSrc.data; }
+
 private:
     ~NV12_to_RGB(){
 

@@ -14,10 +14,12 @@ struct ScopeObject
         std::function<void()> cons_, std::function<void()> decons_) 
         : cons{std::move(cons_)},decons{std::move(decons_)}
     {
+        if(cons!=nullptr)
         cons();
     }
     ~ScopeObject()
     {
+        if(decons!=nullptr)
         decons();
     }
 };

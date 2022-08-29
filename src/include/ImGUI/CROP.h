@@ -35,7 +35,7 @@ struct CROP : public I_Render_Task
 
     CachingWrapper<string> vsSrcContent;
     CachingWrapper<string> fsSrcContent;
-    bool PrepareExecutingParameters() override
+    bool PrepareExecutingParameters(bool force_reset=false) override
     {
         auto chgParams=!params.SyncCache();
         vsSrcContent.SetSelf(readFile(params->vsSrc.data));

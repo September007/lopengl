@@ -1,5 +1,6 @@
 #include <Light/buffer.hpp>
 #include <GLFW/glfw3.h>
+#include <helper/msg_center.h>
 namespace Light
 {
 	VertexBuffer* VertexBuffer::create(float* vertices, uint32_t size)
@@ -236,13 +237,19 @@ namespace Light
 	void OpenGLContext::init()
 	{
 		glfwMakeContextCurrent(m_windowHandle);
-		//int version = gladLoadGL(glfwGetProcAddress);
-		int version = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		if(!version)
-		{
-			LIGHT_CORE_CRITICAL("Could not initialize GLAD");
-			exit(1);
-		}
+		// xucl load this only one time
+		static ScopeObject one_time_init{
+			[]
+			{
+				int version = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+				if (!version)
+				{
+					LIGHT_CORE_CRITICAL("Could not initialize GLAD");
+					exit(1);
+				}
+			},
+			[] {}};
+		CurrentContext()=this;
 
 #if 0
 		if(GLAD_GL_VERSION_4_3 || GLAD_GL_KHR_debug)
