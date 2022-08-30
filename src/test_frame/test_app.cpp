@@ -7,6 +7,7 @@
 #include <ImGUI/CROP.h>
 #include <ImGUI/NV12_to_RGB.h>
 #include <ImGUI/blend.h>
+#include <ImGUI/pixelRotate.h>
 static void glfw_error_callback(int error, const char *description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -51,6 +52,12 @@ int tmain(int ,char**)
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	CentralController cc;
+	cc.AddTask(std::shared_ptr<PixelRotate>(
+		new PixelRotate("PixelRotate",
+						readFile("../src/test_frame/glsl/HANDSOUT/pixelRotate/pixelRotate.vs.glsl"),
+						readFile("../src/test_frame/glsl/HANDSOUT/pixelRotate/pixelRotate.fs.glsl"),
+						&cc),
+		&I_Render_Task::I_Render_Task_Deleter));
 	cc.AddTask(std::shared_ptr<BLEND>(
 		new BLEND("BLEND",
 						readFile("../src/test_frame/glsl/HANDSOUT/blend/blend.vs.glsl"),

@@ -53,6 +53,8 @@ struct BLEND : public I_Render_Task
         auto chgParams = !params.SyncCache();
         vsSrcContent.SetSelf(readFile(params->vsSrc.data));
         fsSrcContent.SetSelf(readFile(params->fsSrc.data));
+        if(chgParams)
+            glfwSetWindowSize(Light::OpenGLContext::CurrentContext()->GetHandle(),params->frame_width.data,params->frame_height.data);
         // params and shader source not changing, just return
         if (program.getProgram() != 0 && !chgParams && vsSrcContent.SyncCache() && fsSrcContent.SyncCache())
             return true;
