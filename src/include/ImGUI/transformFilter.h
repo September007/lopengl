@@ -1,7 +1,10 @@
 #pragma once
 #include <ImGUI/Shader_Context.h>
 
-struct PixelRotate : public I_Render_Task
+// import pi
+using  namespace std::numbers;
+
+struct TransformFilter : public I_Render_Task
 {
     struct SettingParams : Check_Render_Task_Completeness<SettingParams>
     {
@@ -9,21 +12,33 @@ struct PixelRotate : public I_Render_Task
         {
             // could be set on outside
             Universal_Type_Wrapper<string> texture_path = {"overlay", R"(../media/texture/bmp/9.dib)"};
-            Universal_Type_Wrapper<int> rotateType = {"rotateType", 0, 0, 4, 0.03};
-            auto GetAllAttr() const { return std::tie(texture_path, rotateType); }
+            Universal_Type_Wrapper<float> dScaleX = {"dScaleX", 1, -1.5, 1.5, 0.03};
+            Universal_Type_Wrapper<float> dScaleY = {"dScaleY", 1, -1.5, 1.5, 0.03};
+            Universal_Type_Wrapper<float> theta = {"theta", 0,-180, 180, 0.1};
+
+            Universal_Type_Wrapper<int> overlay_Width = {"overlay_Width", 1, -1.5, 1.5, 0.03};
+            Universal_Type_Wrapper<int> overlay_Height = {"overlay_Height", 1, -1.5, 1.5, 0.03};
+
+            Universal_Type_Wrapper<int> dst_Width = {"dst_Width", 1, -1.5, 1.5, 0.03};
+            Universal_Type_Wrapper<int> dst_Height = {"dst_Height", 1, -1.5, 1.5, 0.03};
+            auto GetAllAttr() const { return std::tie(
+                texture_path,
+                dScaleX,dScaleY,theta,
+                overlay_Width,overlay_Height,
+                dst_Width,dst_Height); }
         };
         Universal_Group_Wrapper<Shader_Params> shader_params = {"Shader params", {}};
         Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
         Universal_Type_Wrapper<int> frame_width = {"frame width", 1920, 256, 2048, 256};
         Universal_Type_Wrapper<int> frame_height = {"frame height", 1080, 256, 2048, 256};
-        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/pixelRotate/pixelRotate.vs.glsl)"};
-        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/pixelRotate/pixelRotate.fs.glsl)"};
+        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/transformFilter/transformFilter.vs.glsl)"};
+        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/transformFilter/transformFilter.fs.glsl)"};
         auto GetAllAttr() const { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
     };
-    PixelRotate(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
+    TransformFilter(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
         : I_Render_Task(name, vsSrc, fsSrc, cc) {}
 
-    Cache_Group_Wrapper<SettingParams> params = {"PixelRotate", SettingParams{}};
+    Cache_Group_Wrapper<SettingParams> params = {"TransformFilter", SettingParams{}};
     // texture obj
     TextureObject tex = {-1, 0};
 
@@ -56,7 +71,7 @@ struct PixelRotate : public I_Render_Task
         // there would be a overwriting behaviour on this GL_TEXTURE1
         tex = Helper::CreateTexture(GL_TEXTURE1, params->shader_params->texture_path.data);
         program.prepareVBO(*vbo.get());
-        program.setInt(params->shader_params->texture_path.GetName(), 1);
+        program.setInt(params->shader_params->texture_path.GetName(), tex.targetTexture-GL_TEXTURE0);
 
         vbo->setLayout(layout);
         vao->addVertexBuffer(vbo);
@@ -65,7 +80,7 @@ struct PixelRotate : public I_Render_Task
         auto attrs = program.getAttributes();
         checkExist(program, params->shader_params->texture_path.GetName());
 
-        SetProgramParam(program, params->shader_params->rotateType);
+        SetProgramParam(program, params->shader_params);
         return true;
     }
     void ShowConfig() override
@@ -77,15 +92,15 @@ struct PixelRotate : public I_Render_Task
             ImGui::Text("the vertex coord could be generated automatically"); });
         if (params->will_autogen_frame_wh.data == true)
         {
-            params->frame_height.data = tex.height;
-            params->frame_width.data = tex.width;
+            params->shader_params->overlay_Height.data=params->shader_params->dst_Height.data= params->frame_height.data = tex.height;
+            params->shader_params->overlay_Width.data=params->shader_params->dst_Width.data=params->frame_width.data = tex.width;
         }
     }
     std::string &GetVsSrcFile() override { return params->vsSrc.data; }
     std::string &GetFsSrcFile() override { return params->fsSrc.data; }
 
 private:
-    ~PixelRotate(){
+    ~TransformFilter(){
 
     };
 };
