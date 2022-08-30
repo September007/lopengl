@@ -110,7 +110,13 @@ namespace error_map
         auto time_desc()
         {
             // check https://en.cppreference.com/w/cpp/chrono/zoned_time/formatter
+#ifdef defined(_MSC_VER)
             return std::format(std::cin.getloc(), "%T", code_time);
+#elif defined(__GNUC__)
+            return "";
+#elif defined(__clang__)
+            return "";
+#endif
         }
         auto get_desc() { return fmt::format("{}\n{}: {}", time_desc(), msg_mapping(cp), msg); }
     };

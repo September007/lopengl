@@ -127,59 +127,70 @@ vec4 PS_2D(vec2 TextureUV)
 }
 
 // tc: coord of texture pixel
-vec4 PS3_2D(vec2 tc){
-    //  tc.y = 1.0 - tc.y;
-    float bw=float(back_Width);
-    float bh=float(back_Height);
-    float mw=float(overlay_Width);
-    float mh=float(overlay_Height)/1.5;
+vec4 PS3_2D(vec2 tc)
+{
+    SWITCH(0)
+    {
+        CASE(0)
+        
+        float bw=float(back_Width);
+        float bh=float(back_Height);
+        float mw=float(overlay_Width);
+        float mh=float(overlay_Height)/1.5;
+        
+        float w=tc.x*mw;
+        float h=tc.y*mh;
+        int uvw=int(w)/2*2;
+        float y_y=tc.y*2./3.;
+        vec2 Y_coord=vec2(tc.x,y_y);
+        vec2 U_coord=vec2(uvw/mw,y_y/2.+2./3.);
+        vec2 V_coord=vec2((uvw+1)/mw,y_y/2.+2./3.);
+        
+        vec4 Ycolor=TEXTURE2D(overlay,Y_coord);
+        vec4 Ucolor=TEXTURE2D(overlay,U_coord);
+        vec4 Vcolor=TEXTURE2D(overlay,V_coord);
+        vec4 color=vec4(1.);
+        vec3 yuv=vec3(Ycolor.x,Ucolor.x,Vcolor.x);
+        
+        color=choosMode(yuv,mode);
+        return color;
+        
+        break;
+        CASE(1)
+        float bw=float(back_Width);
+        float bh=float(back_Height);
+        float mw=float(overlay_Width);
+        float mh=float(overlay_Height)/1.5;
+        
+        float w=tc.x*mw;
+        float h=tc.y*overlay_Height;
+        if(h<mh)
+        {
+            int uvw=int(w)/2*2;
+            float y_y=tc.y*2./3.;
+            vec4 Ycolor=TEXTURE2D(overlay,tc);
+            vec4 Ucolor=TEXTURE2D(overlay,vec2(uvw/mw,tc.y/2+2./3.));
+            vec4 Vcolor=TEXTURE2D(overlay,vec2((uvw+1)/mw,tc.y/2+2./3.));
+            vec4 color=vec4(1.);
+            vec3 yuv=vec3(Ycolor.x,Ucolor.x,Vcolor.x);
+            
+            color=choosMode(yuv,mode);
+            return color;
+        }
+        break;
+        DEFAULT()
+        ENDSWITCH()
+    };
     
-    float w=tc.x*mw;
-    float h=tc.y*mh;
-    int nH=int(bh+1)/2;
-    int uvw=int(w)/2 * 2;
-
-
-    // if(mod(int(h/2),2)==0)
-    //     uvw+=overlay_Width/2;
-    // Y-data coord & NV-data coord
-    vec2 Y_coord=vec2(w/mw,h/mh*2/3);
-    // vec2 U_coord=vec2(uvw/mw,h/3/mh+2./3);
-    vec2 U_coord=vec2(uvw/mw,(h / 2 + mh) / overlay_Height);
-    vec2 V_coord=vec2((uvw + 1)/mw,(h / 2 + mh) / overlay_Height);
-    //vec2 V_coord=vec2(uvw/mw,h/6/mh+5./6);
-    
-    vec4 Ycolor=TEXTURE2D(overlay,Y_coord);
-    vec4 Ucolor=TEXTURE2D(overlay,U_coord);
-    vec4 Vcolor=TEXTURE2D(overlay,V_coord);
-    vec4 color=vec4(Ycolor.x,Ucolor.x,Vcolor.x,1.0f);
-    //Ucolor.x=0.5*mod(int(w/10),2);
-    //if(mod(int(w),100)==0)Ucolor.x=0.4;
-    // return color;
-    vec3 yuv=vec3(
-        Ycolor.x,
-        Ucolor.x,
-        Vcolor.x
-        ); 
-    // yuv=vec3(Ycolor.x,0,0);
-    
-    color=choosMode(yuv,mode);
-    //color=vec4(color.z,color.y,color.x,color.a);
-    //if(Ycolor.x<0||Ycolor.x>1||Ucolor.x<0||Ucolor.x>1||Vcolor.x<0||Vcolor.x>1)discard;
-    // return vec4(yuv,1);
-    return color;
-   // return vec4(Ycolor.x, 1.0,1.0,1.0);
+    //method2
+    // {
+        
+    // }
     
 }
 varying vec4 vs_output_position;// vertex position
 varying vec2 vs_output_TextureUV;// vertex texture coords
 
-float uc(float c){
-    return int(c*overlay_Width)/2*2/float(overlay_Width);
-}
-float vc(float c){
-    return int(c*overlay_Width+1)/2*2/float(overlay_Width);
-}
 void main(){
     vec4 xy=vs_output_position;
     vec2
@@ -187,13 +198,7 @@ void main(){
     //tc=vec2((xy.x+1)/2*overlay_Width,(xy.y+1)/2*overlay_Height);
     tc=vs_output_TextureUV;
     gl_FragColor=PS3_2D(tc);
-    // gl_FragColor=PS_2D(vec2(tc.x*1440,tc.y*1350));
-    gl_FragColor= TEXTURE2D(overlay,
-    vec2(uc(tc.x),
-    tc.y
-    ///3+2./3
-    *2/3
-    ));
+    //gl_FragColor= TEXTURE2D(overlay,vs_output_TextureUV);
     //gl_FragColor=vs_output_position;vec4(0,1,0,1);
     
 }

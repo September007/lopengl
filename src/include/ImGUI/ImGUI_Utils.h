@@ -221,7 +221,7 @@ struct Universal_Group_Wrapper {
 /*****************************************************************************************/
 // clang-format on
 template <Visible_Attr_Type T = Universal_Type_Wrapper<int>>
-	requires !Visible_Attr_Group_Type<T> inline void Draw_element(T& t)
+	requires (!Visible_Attr_Group_Type<T>) inline void Draw_element(T& t)
 {
 	using RRT = std::remove_reference_t<typename T::ValueType>;
 	auto& data = t.data;

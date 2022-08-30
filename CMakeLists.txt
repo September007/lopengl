@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_CXX_STANDARD 20)
-
+set(CMAKE_BUILD_WITH_INSTALL_RPATH )
 project(lopengl)
 
 LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib)
@@ -57,7 +57,7 @@ if(WIN32)
   set(COMMON_LIBS   glew glfw legacy_stdio_definitions.lib opengl32.lib  fmt::fmt-header-only)
 elseif(UNIX)
   find_package(PkgConfig REQUIRED)
-  set(COMMON_LIBS glew glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL rt dl)
+  set(COMMON_LIBS glew glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL  fmt::fmt-header-only)
 else()
 endif()
 
@@ -71,7 +71,7 @@ if(MSVC)
   target_compile_options(glew PUBLIC /W1)
 else()
   add_compile_options(  -Wall -Wextra -pedantic -Werror)
-  target_compile_options(glew -W)
+  target_compile_options(glew PUBLIC -w)
 endif()
 
 
