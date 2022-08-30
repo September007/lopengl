@@ -6,7 +6,6 @@
 #include <map>
 #include <fmt/format.h>
 using std::string;
-
 template <typename T>
 using Cache_Type_Wrapper = CachingWrapper<Universal_Type_Wrapper<T>>;
 template <typename T>
@@ -373,7 +372,7 @@ struct Test_Render_Task : public I_Render_Task
     };
     Universal_Group_Wrapper<SettingParams> params = {"Shader Setting", {}};
     // texture obj
-    TextureObject tex = {-1, 0};
+    TextureObject tex = {std::numeric_limits<GLuint>::max(), 0};
     bool PrepareExecutingParameters(bool force_reset=false) override
     {
         program = Helper::CreateProgram(ShaderObject(GL_VERTEX_SHADER, readFile(params->vsSrc.data)),

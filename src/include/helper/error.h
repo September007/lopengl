@@ -110,7 +110,9 @@ namespace error_map
         auto time_desc()
         {
             // check https://en.cppreference.com/w/cpp/chrono/zoned_time/formatter
-#ifdef defined(_MSC_VER)
+
+// why there defined not work
+#ifdef _MSVC_LANG
             return std::format(std::cin.getloc(), "%T", code_time);
 #elif defined(__GNUC__)
             return "";

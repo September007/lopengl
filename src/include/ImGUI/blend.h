@@ -43,8 +43,8 @@ struct BLEND : public I_Render_Task
 
     Cache_Group_Wrapper<SettingParams> params = {"BLEND", SettingParams{}};
     // texture obj
-    TextureObject tex_overlay = {-1, 0};
-    TextureObject tex_background = {-1, 0};
+    TextureObject tex_overlay = {std::numeric_limits<GLuint>::max(), 0};
+    TextureObject tex_background = {std::numeric_limits<GLuint>::max(), 0};
 
     CachingWrapper<string> vsSrcContent;
     CachingWrapper<string> fsSrcContent;

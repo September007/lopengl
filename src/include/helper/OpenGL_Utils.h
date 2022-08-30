@@ -206,6 +206,9 @@ requires std::is_class_v<T>
 struct BuiltIn_Wrapper<T> : public std::decay_t<T>
 {
     using base = std::decay_t<T>;
+    template<typename ...ARGST>
+    BuiltIn_Wrapper(ARGST&&...args):
+    base(std::forward<ARGST>(args)...){}
     auto &GetData() { return *static_cast<base *>(this); }
     auto &GetData() const { return *static_cast<base const *>(this); }
 };

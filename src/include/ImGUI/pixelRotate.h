@@ -25,7 +25,7 @@ struct PixelRotate : public I_Render_Task
 
     Cache_Group_Wrapper<SettingParams> params = {"PixelRotate", SettingParams{}};
     // texture obj
-    TextureObject tex = {-1, 0};
+    TextureObject tex = {std::numeric_limits<GLuint>::max(), 0};
 
     CachingWrapper<string> vsSrcContent;
     CachingWrapper<string> fsSrcContent;

@@ -28,7 +28,7 @@ add_subdirectory("extern/fmt" EXCLUDE_FROM_ALL)
 #add_subdirectory("src/test_frame")
 include("src/test_frame/CMakeLists.txt")
 set(extern_include_dirs 
-  "extern/imgui/examples/libs/glfw/include"
+ # "extern/imgui/examples/libs/glfw/include"
   "extern/glad/include"
   "extern/glew-2.1.0/include"
   "extern/fmt/include"
@@ -38,7 +38,7 @@ set(extern_include_dirs
   "src/include"
   # write include dir here , will cause all the target binding this include_dir
   # this is only for the vscode intellisense to judge include dirs
-  "src/test_frame/include"
+  #"src/test_frame/include"
   "src/include/Light"
 )
 include_directories(${extern_include_dirs})
