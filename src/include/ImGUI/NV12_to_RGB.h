@@ -12,7 +12,7 @@ struct NV12_to_RGB : public I_Render_Task
         struct Shader_Params
         {
             // could be set on outside
-            Universal_Type_Wrapper<string> texture_path = {"overlay", R"(F:/BMP/9.dib)"};
+            Universal_Type_Wrapper<string> texture_path = {"overlay", R"(../media/texture/bmp/9.dib)"};
             Universal_Type_Wrapper<int> mode = {"mode", 0, 0, 3, 0.1};
             Universal_Type_Wrapper<int> dst_Width = {"back_Width", 512, 256, 2048, 256};
             Universal_Type_Wrapper<int> dst_Height = {"back_Height", 512, 256, 2048, 256};

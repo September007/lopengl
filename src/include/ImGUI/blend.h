@@ -10,11 +10,11 @@ struct BLEND : public I_Render_Task
             // could be set on outside
             Universal_Type_Wrapper<int> back_Height = {"back_Height", 512, 256, 2048, 256};
             Universal_Type_Wrapper<int> back_Width = {"back_Width", 512, 256, 2048, 256};
-            Universal_Type_Wrapper<string> background = {"background", R"(F:/BMP/9.dib)"};
+            Universal_Type_Wrapper<string> background = {"background", R"(../media/texture/bmp/9.dib)"};
 
             Universal_Type_Wrapper<int> overlay_Height = {"overlay_Height", 512, 256, 2048, 256};
             Universal_Type_Wrapper<int> overlay_Width = {"overlay_Width", 512, 256, 2048, 256};
-            Universal_Type_Wrapper<string> overlay = {"overlay", R"(F:/BMP/2004050204170.bmp)"};
+            Universal_Type_Wrapper<string> overlay = {"overlay", R"(../media/texture/bmp/2004050204170.bmp)"};
 
             Universal_Type_Wrapper<int> blendMode = {"blendMode", 0, 0, 23, 0.01};
 

@@ -102,7 +102,7 @@ set_property(SOURCE test_app APPEND PROPERTY srcFile
 ${img_srcs}
 )
 set_property(SOURCE "34.PriorGL-frameBuffer" PROPERTY shaderDeps 1)
-set_property(SOURCE "test_app" PROPERTY shaderDeps 1)
+# set_property(SOURCE "test_app" PROPERTY shaderDeps 1)
 # add executable object 
 # properties  : specification
 # srcFile     : source file list
