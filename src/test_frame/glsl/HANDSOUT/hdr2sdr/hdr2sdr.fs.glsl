@@ -28,13 +28,40 @@ uniform float pq_peak=10000.f;//pq is absolute encoding
 #define MP_REF_WHITE_HLG 3.17955f
 #define sdr_avg .25f
 
+vec3 mpow(vec3 v,float p){
+	return pow(v,vec3(p,p,p));
+}
+vec3 vsSub(vec3 v,float f){
+	return vec3(v.x-f,v.y-f,v.z-f);
+}
+vec3 svSub(float f,vec3 v){
+	return vec3(f-v.x,f-v.y,f-v.z);
+}
+vec3 svMax(float f,vec3 v){
+	return vec3(max(f,v.x),max(f,v.y),max(f,v.z));
+}
+
 bool iszero(float value) 
 {
 	return value >= -EQN_EPS && value <= EQN_EPS;
 }
+bool lessOrEqul31(vec3 v,float f){
+	return v.x<=f&&v.y<=f&&v.z<=f;
+}
+float log10(float f){return log(f)/log(10);}
 int XX(){
 	return 1;
 }
+float lerp(float l,float r,float deg){
+	return l+(r-l)*deg;
+}
+vec3 lerp(vec3 l,vec3 r,float deg){
+	return vec3(l.x+(r.x-l.x)*deg,
+	l.y+(r.y-l.y)*deg,
+	l.z+(r.z-l.z)*deg);
+}
+
+
 vec3  PQ_EOTF_12(vec3 pq_sinal) 
 {
 
@@ -45,10 +72,10 @@ vec3  PQ_EOTF_12(vec3 pq_sinal)
     float c3 = (2392.0f *  32.0f) / 4096.0f;
 	
     vec3 sinal = clamp(pq_sinal, 0.0f, 1.0f);
-    vec3 tempValue = pow(sinal, (1.0f / m2));
-    tempValue = (pow(max(0.0f, (tempValue - c1)) / (c2 - c3 * tempValue), (1.0f / m1)));
+    vec3 tempValue = mpow(sinal, (1.0f / m2));
+    tempValue = (mpow(svMax(0.0f, vsSub(tempValue , c1)) / svSub(c2 , c3 * tempValue), (1.0f / m1)));
     return tempValue * 10000.0f / MP_REF_WHITE;
-};
+}
 vec3 HLG_INV_OETF_12(vec3 hlg_signal)
 {
 	float m_tfScale=12.f;//19.6829249; // transfer function scaling - assuming super whites
@@ -58,10 +85,10 @@ vec3 HLG_INV_OETF_12(vec3 hlg_signal)
 	float m_b=.28466892f;
 	float m_c=.55991073f;
 	
-	vec3 tmp3=hlg_signal<=.5f?hlg_signal*hlg_signal*4.f:exp((hlg_signal-m_c)/m_a)+m_b;
+	vec3 tmp3=lessOrEqul31( hlg_signal,.5f)?hlg_signal*hlg_signal*4.f:exp((hlg_signal-m_c)/m_a)+m_b;
 	tmp3*=1.f/MP_REF_WHITE_HLG;
 	return tmp3;
-};
+}
 vec3 HLG_OOTF_12(vec3 RGBs,float Lw,float Lb)
 {
 	float peak=1000.f/MP_REF_WHITE;
@@ -74,23 +101,21 @@ vec3 HLG_OOTF_12(vec3 RGBs,float Lw,float Lb)
 	RGBd.y=RGBs.y*factor;
 	RGBd.z=RGBs.z*factor;
 	return RGBd;
-};
+}
 vec3 hable3(vec3 x)
 {
 	float A=.15f,B=.50f,C=.10f,D=.20f,E=.02f,F=.30f;
 	return(x*(x*A+B*C)+D*E)/(x*(x*A+B)+D*F)-E/F;
 }
-uniform float BT1886_INV_EOTF(float Rd)
+float BT1886_INV_EOTF(float Rd)
 {
 	float m_gamma=2.4f;
 	float m_inverseGamma=1.f/m_gamma;
 	float c=clamp(Rd,0.f,1.f);
 	return pow(c,m_inverseGamma);
 }
-PS_OUTPUT PS_2D(VS_OUTPUT In)
+vec4 PS_2D(vec2 tc)
 {
-	PS_OUTPUT Output;
-	vec2 tc=TextureUV;
 	
 	vec3 bt2020_bt709_0=vec3(1.66049695f,-.587656736f,-.0728399456f);
 	vec3 bt2020_bt709_1=vec3(-.124547064f,1.13289523f,-.00834798440f);
@@ -162,7 +187,7 @@ PS_OUTPUT PS_2D(VS_OUTPUT In)
 	{
 		float base=.18f*dst_scale;
 		float coeff=max(sig_max-base,1e-6f)/max(sig_max,1.f);
-		coeff=(float)(desat)*pow(coeff,desat_exp);
+		coeff=float(desat)*pow(coeff,desat_exp);
 		color.xyz=lerp(sig_lin,dst_scale*sig,coeff);
 	}
 	else

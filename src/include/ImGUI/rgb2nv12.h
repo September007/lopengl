@@ -20,8 +20,8 @@ struct RGB2NV12 : public I_Render_Task
         Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
         Universal_Type_Wrapper<int> frame_width = {"frame width", 1920, 256, 2048, 256};
         Universal_Type_Wrapper<int> frame_height = {"frame height", 1080, 256, 2048, 256};
-        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/crop/crop.vs.glsl)"};
-        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/crop/crop.fs.glsl)"};
+        Universal_Type_Wrapper<string> vsSrc = {"vert shader source", R"(../src/test_frame/glsl/HANDSOUT/rgb_to_nv12/rgb_to_nv12.vs.glsl)"};
+        Universal_Type_Wrapper<string> fsSrc = {"frag shader source", R"(../src/test_frame/glsl/HANDSOUT/rgb_to_nv12/rgb_to_nv12.fs.glsl)"};
         auto GetAllAttr() const { return std::tie(shader_params, will_autogen_frame_wh, frame_width, frame_height, vsSrc, fsSrc); }
     };
     RGB2NV12(string const &name, string const &vsSrc, string const &fsSrc, CentralController *cc)
