@@ -7,19 +7,21 @@
 #define TEXTURE2D texture
 #endif
 
+#define Texture2D  sampler2D  
 // clang-format off
 #define SWITCH(var)int v_var=var;{do{
     #define CASE(val)}if(v_var==val){
     #define DEFAULT()};
 #define ENDSWITCH()}while(false);
-// clang-format on
+
 //--------------------------------------------------------------------------------------
 // Global variables
 //--------------------------------------------------------------------------------------
-uniform sampler2D overlay;        
+uniform Texture2D overlay;        
 uniform float dScaleX;
 uniform float dScaleY;
-uniform float theta;                  
+uniform float theta;
+uniform float    g_fTime;                   
 uniform int overlay_Width;
 uniform int overlay_Height;
 uniform int dst_Width;
@@ -27,13 +29,7 @@ uniform int dst_Height;
 
 #define WS_PI 3.14159265358979323846
 
- varying vec4 vs_output_position;
- varying vec2 vs_output_textureUV;
 
-//--------------------------------------------------------------------------------------
-// This shader outputs the pixel's color by modulating the texture's
-//       color with diffuse material color
-//--------------------------------------------------------------------------------------
 vec2 rotateFunc(vec2 uv, vec2 center, float theta)
 {
 	vec2 temp;
@@ -42,8 +38,7 @@ vec2 rotateFunc(vec2 uv, vec2 center, float theta)
 	return (temp + center);
 }
 
-vec4 PS_2D( vec2 TextureUV)
-{ 
+vec4 PS_2D(vec2 TextureUV){
     float ow = float(overlay_Width);
     float oh = float(overlay_Height);
    
@@ -62,11 +57,12 @@ vec4 PS_2D( vec2 TextureUV)
     float grid = (step(0.0, uv.x) - step(1.0,uv.x)) * (step(0.0, uv.y) - step(1.0, uv.y));   
 	vec4 ovlCol = TEXTURE2D(overlay,uv)*grid;
 	
-    return ovlCol;
-    
+	return  ovlCol;
 }
 
 
+varying vec4 vs_output_position;
+varying vec2 vs_output_textureUV;
 void main(){
-    gl_FragColor=PS_2D(vs_output_textureUV);
+    gl_FragColor = PS_2D(vs_output_textureUV);
 }
