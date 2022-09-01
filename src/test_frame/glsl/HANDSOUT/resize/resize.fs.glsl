@@ -35,21 +35,6 @@ uniform int resize_type;
 
 #define WS_PI 3.14159265358979323846
 
-//--------------------------------------------------------------------------------------
-// Texture samplers
-//--------------------------------------------------------------------------------------
-
-
-
-
-//--------------------------------------------------------------------------------------
-// Pixel shader output structure
-//--------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------
-// This shader outputs the pixel's color by modulating the texture's
-//       color with diffuse material color
-//--------------------------------------------------------------------------------------
 
 
 vec4 PS_2D(vec2 TextureUV){
@@ -60,8 +45,8 @@ vec4 PS_2D(vec2 TextureUV){
    
     vec2 tc = TextureUV;
 
-    float scalFactorX = f_dstWidth / f_srcWidth;
-	float scalFactorY = f_dstHeight / f_srcHeight;
+    // float scalFactorX = f_dstWidth / f_srcWidth;
+	// float scalFactorY = f_dstHeight / f_srcHeight;
     float resizeCoord_x = tc.x;
 	float resizeCoord_y = tc.y;
     float matt = 1.0;

@@ -35,14 +35,16 @@ inline void SetProgramParam(ProgramObject<true> &pro,const Universal_Type_Wrappe
 }
 inline void SetProgramParam(ProgramObject<true> &pro, const Universal_Type_Wrapper<std::string> &i)
 {
-    std::cout<<fmt::format("{:<10}{} is skip","SetString",i.data)<<std::endl;
+    std::cout<<fmt::format("{:<15} {:20} {} is skipped","SetStr",i.GetName(),i.data)<<std::endl;
 }
 template <typename T, int index = 0>
 inline void SetProgramParam(ProgramObject<true> &pro, Universal_Group_Wrapper<T> &i)
 {
     using tupleT = decltype(std::declval< Universal_Group_Wrapper<T>>().GetAllAttr());
     if constexpr (std::tuple_size_v<tupleT> == index)
-        return;
+        {
+            std::cout<<fmt::format("{:<15} {:20} is done\n\n","SetGroup",i.GetName())<<std::endl;
+        }
     else
     {
         auto attrs = i.GetAllAttr();

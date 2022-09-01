@@ -25,44 +25,21 @@
 uniform sampler2D overlay;            //
 
 uniform int mode;
-uniform float    g_fTime;                   // App's time in seconds
 uniform int overlay_Width;
 uniform int overlay_Height;
 uniform int dst_Width;
 uniform int dst_Height;
 
 
-//--------------------------------------------------------------------------------------
-// Texture samplers
-//--------------------------------------------------------------------------------------
-SamplerState TextureSampler
-{
-    Filter = MIN_MAG_MIP_NEAREST;
-    AddressU = Wrap;
-    AddressV = Wrap;
-};
-
-
-
-//--------------------------------------------------------------------------------------
-// Pixel shader output structure
-//--------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------
-// This shader outputs the pixel's color by modulating the texture's
-//       color with diffuse material color
-//--------------------------------------------------------------------------------------
 
 #define EQN_EPS 1e-9f
 
-static bool isZero(float x) {
+bool isZero(float x) {
 	return (x > -EQN_EPS && x < EQN_EPS);
 }
 
 vec4 PS_2D(vec2 TextureUV){
-    int width = overlay_Width;
-    int height = overlay_Height;
-    float ow = float(overlay_Width);
+    float ow = float(overlay_Width); 
     float oh = float(overlay_Height);
     float bw = float(dst_Width);
     float bh = float(dst_Height);
@@ -81,16 +58,19 @@ vec4 PS_2D(vec2 TextureUV){
         yuv.z = 0.4392f*img.z - 0.3989f*img.y - 0.0402f*img.x + 128.0f;
     }
     yuv  = yuv / 255.0;
+    return vec4(
+        yuv.x,
+        yuv.y,
+        yuv.z,
+        yuv.a
+    );
     return  yuv;
 
 }
 
-// 
+varying vec4 vs_output_position;
+varying vec2 vs_output_textureUV;
 
-
-//--------------------------------------------------------------------------------------
-// Renders scene to render target using D3D11 Techniques
-//--------------------------------------------------------------------------------------
 void main(){
 	gl_FragColor = PS_2D(vs_output_textureUV);	
 }
