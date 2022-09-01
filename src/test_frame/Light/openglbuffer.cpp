@@ -100,7 +100,10 @@ namespace Light
 		glGenVertexArrays(1, &m_rendererId);
 	}
 
-	OpenGLVertexArray::~OpenGLVertexArray() = default;
+	// xucl : auto delete 
+	OpenGLVertexArray::~OpenGLVertexArray() {
+		glDeleteVertexArrays(1,&m_rendererId);
+	};
 
 	void OpenGLVertexArray::bind() const
 	{
