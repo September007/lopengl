@@ -10,7 +10,9 @@ struct PixelRotate : public I_Render_Task
             // could be set on outside
             Universal_Type_Wrapper<string> texture_path = {"overlay", R"(../media/texture/bmp/9.dib)"};
             Universal_Type_Wrapper<int> rotateType = {"rotateType", 0, 0, 4, 0.03};
-            auto GetAllAttr() const { return std::tie(texture_path, rotateType); }
+            Universal_Type_Wrapper<int> overlay_Width = {"overlay_Width", 512,256,1920,256};
+            Universal_Type_Wrapper<int> overlay_Height = {"overlay_Height", 512,256,1920,256};
+            auto GetAllAttr() const { return std::tie(texture_path, rotateType,overlay_Width,overlay_Height); }
         };
         Universal_Group_Wrapper<Shader_Params> shader_params = {"Shader params", {}};
         Universal_Type_Wrapper<bool> will_autogen_frame_wh = {"will autogen frame width and height", false};
@@ -65,7 +67,7 @@ struct PixelRotate : public I_Render_Task
         auto attrs = program.getAttributes();
         checkExist(program, params->shader_params->texture_path.GetName());
 
-        SetProgramParam(program, params->shader_params->rotateType);
+        SetProgramParam(program, params->shader_params);
         return true;
     }
     void ShowConfig() override
@@ -77,8 +79,8 @@ struct PixelRotate : public I_Render_Task
             ImGui::Text("the vertex coord could be generated automatically"); });
         if (params->will_autogen_frame_wh.data == true)
         {
-            params->frame_height.data = tex.height;
-            params->frame_width.data = tex.width;
+            params->frame_height.data =params->shader_params->overlay_Height.data= tex.height;
+            params->frame_width.data  = params->shader_params->overlay_Width.data=tex.width;
         }
     }
     std::string &GetVsSrcFile() override { return params->vsSrc.data; }
