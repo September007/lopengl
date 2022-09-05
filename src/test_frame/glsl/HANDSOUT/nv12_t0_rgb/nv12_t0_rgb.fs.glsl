@@ -194,11 +194,7 @@ varying vec2 vs_output_TextureUV;// vertex texture coords
 void main(){
     vec4 xy=vs_output_position;
     vec2
-    //tc=(vs_output_TextureUV.x*overlay_Width,vs_output_TextureUV*overlay_Height);
-    //tc=vec2((xy.x+1)/2*overlay_Width,(xy.y+1)/2*overlay_Height);
     tc=vs_output_TextureUV;
     gl_FragColor=PS3_2D(tc);
-    //gl_FragColor= TEXTURE2D(overlay,vs_output_TextureUV);
-    //gl_FragColor=vs_output_position;vec4(0,1,0,1);
     
 }
