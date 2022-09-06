@@ -75,12 +75,6 @@ vec4 PS_2D(vec2 TextureUV){
 	return  ovlCol;
 }
 
-// 
-
-
-//--------------------------------------------------------------------------------------
-// Renders scene to render target using D3D11 Techniques
-//--------------------------------------------------------------------------------------
 varying vec4 vs_output_position;
 varying vec2 vs_output_textureUV;
 void main(){
