@@ -42,7 +42,7 @@ inline void SetProgramParam(ProgramObject<true> &pro, Universal_Group_Wrapper<T>
     using tupleT = decltype(std::declval< Universal_Group_Wrapper<T>>().GetAllAttr());
     if constexpr (std::tuple_size_v<tupleT> == index)
         {
-            std::cout<<fmt::format("{:<15} {:20} is done\n\n","SetGroup",i.GetName())<<std::endl;
+            std::cout<<fmt::format("{:<15} {:20} is done\n","SetGroup",i.GetName())<<std::endl;
         }
     else
     {

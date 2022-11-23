@@ -1,4 +1,4 @@
-#version 120
+#version 330
 
 #pragma optimize(off)
 #if __VERSION__<130
@@ -103,11 +103,13 @@ int mod(in int i,int m){
 vec4 PS3_2D(vec2 tc)
 {
     int scale=2;
-    ivec2 block=ivec2(1,1);
+    vec2 block=
+    vec2(144,90);
+    block=vec2(1,1);
     ivec2 crd=ivec2(
-        1,0
+       0,0
         );
-    //tc=vec2((tc.x+crd.x)/block.x,(tc.y+crd.y)/block.y);
+    tc=vec2((tc.x+crd.x)/block.x,(tc.y+crd.y)/block.y);
     SWITCH(0)
     {
         CASE(0)
@@ -127,26 +129,31 @@ vec4 PS3_2D(vec2 tc)
         // vec4 Ucolor=TEXTURE2D(tex_UV,tc_u);
         // vec4 Vcolor=TEXTURE2D(tex_UV,tc_v);
 
-        float ux_int_coord = (int((tc.x*overlay_Width)))/2*2;
+        float ux_int_coord = (int(( tc.x *overlay_Width)))/2*2;
         float vx_int_coord=ux_int_coord+1;
 
         vec4 Ycolor=TEXTURE2D(tex_Y,tc);
         vec4 Ucolor=TEXTURE2D(tex_UV,vec2(ux_int_coord/overlay_Width,tc.y));
         vec4 Vcolor=TEXTURE2D(tex_UV,vec2(vx_int_coord/overlay_Width,tc.y));
         
-      
+        
         vec3 yuv=vec3(
-        Ycolor.x,
+        Ycolor.x
+        ,
         Ucolor.x
         ,
         Vcolor.x
-        );
+        );  
         
         vec4 color=choosMode(yuv,mode);
+        color=vec4(yuv,1);
+       // if(tc.x>0.5) color.yz=vec2(0.5,0.5);
+        //color=TEXTURE2D(tex_UV,vec2(vx_int_coord/overlay_Width,tc.y));
         return color;
         
         break;
         CASE(1)
+        discard;
         float bw=float(back_Width);
         float bh=float(back_Height);
         float mw=float(overlay_Width);
@@ -181,10 +188,14 @@ varying vec4 vs_output_position;// vertex position
 varying vec2 vs_output_TextureUV;// vertex texture coords
 
 void main(){
-    vec4 xy=vs_output_position;
+
+    vec4 xy=vs_output_position; 
     vec2
     tc=vs_output_TextureUV;
-   // gl_FragColor=PS3_2D(tc);
+    if(tc.x<0||tc.x>1
+        )
+        discard;
 
 
+    gl_FragColor=PS3_2D(tc);
 }

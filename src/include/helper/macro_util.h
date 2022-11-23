@@ -1,7 +1,7 @@
 #pragma once
-//#define _DEBUG
 
-#ifdef _DEBUG
+
+#ifdef Debug
 
 #define DebugArea(...) __VA_ARGS__
 
@@ -10,4 +10,4 @@
 #define DebugArea(...)
 #endif
 
-#define ASSERT(...) _ASSERT(__VA_ARGS__)
+#define ASSERT(...)  assert(__VA_ARGS__)//_ASSERT(__VA_ARGS__)

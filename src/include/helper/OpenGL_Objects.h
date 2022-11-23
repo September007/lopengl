@@ -7,6 +7,7 @@
 #include <helper/error.h>
 #include <helper/msg_center.h>
 #include <helper/macro_util.h>
+#include <thread>
 using namespace std::literals;
 template <bool strict_ = STRICT_>
 struct ShaderObject
@@ -165,19 +166,19 @@ struct ProgramObject
     void setBool(const std::string &name, bool value) const
     {
         DebugArea(if(!checkExist(getUniforms(), name))return);
-        std::cerr << fmt::format("{:15} {:<20} {}", "Setbool", name, value) << std::endl;
+        std::cerr << fmt::format("{:15} {:<20} {:>10}", "Setbool", name, value) << std::endl;
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), (int)value);
     }
     void setInt(const std::string &name, int value) const
     {
         DebugArea(if(!checkExist(getUniforms(), name))return;);
-        std::cerr << fmt::format("{:15} {:<20} {}", "SetInt", name, value) << std::endl;
+        std::cerr << fmt::format("{:15} {:<20} {:>10}", "SetInt", name, value) << std::endl;
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     void setFloat(const std::string &name, float value) const
     {
         DebugArea(if(!checkExist(getUniforms(), name))return);
-        std::cerr << fmt::format("{:15} {:<20} {}", "SetFloat", name, value) << std::endl;
+        std::cerr << fmt::format("{:15} {:<20} {:>10}", "SetFloat", name, value) << std::endl;
         glUniform1f(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     int getUniformLocation(const std::string &name)
@@ -203,7 +204,7 @@ struct ProgramObject
         auto ex = (map.find(name) != map.end());
         if (!ex)
         {
-            std::cerr << fmt::format("name {} not found\n", name) << std::endl;
+            std::cerr << fmt::format("{:15} {:<20} {:>10}","NoSet-notFound", name,"") << std::endl;
         }
         return ex;
     }
@@ -339,7 +340,7 @@ namespace Helper
         glActiveTexture(textureTarget); // binding textureTarget->GL_TEXTURE_2D
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture); // binding GL_TEXTURE_2D->texture, so there is textureTarget->texture
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

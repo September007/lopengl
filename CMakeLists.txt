@@ -66,8 +66,12 @@ endif()
 ########################  common compiler setting  ############################################
 ###############################################################################################
 
+if("${CMAKE_BUILD_TYPE}" EQUAL "Debug")
+  add_compile_definitions(Debug)
+endif()
+
 if(MSVC)
-  add_compile_options( /W4 /WX)
+  add_compile_options( /W4 /WX /wd4819)
   target_compile_options(glew PUBLIC /W1)
 else()
   add_compile_options(  -Wall -Wextra -pedantic -Werror)

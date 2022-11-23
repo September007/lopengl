@@ -65,7 +65,7 @@ namespace error_map
     template <error_code ec, object_code oc, message_code mc>
     auto msg_mapping()
     {
-        constexpr static std::string error_desc = fmt::format("[{}] {}.{}:", ec_msg[ec], oc_msg[oc], mc_msg[mc]);
+        const static std::string error_desc = fmt::format("[{}] {}.{}:", ec_msg[ec], oc_msg[oc], mc_msg[mc]);
         return error_desc;
     }
     inline auto msg_mapping(error_code ec, object_code oc, message_code mc)

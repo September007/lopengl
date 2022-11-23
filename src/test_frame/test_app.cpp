@@ -57,6 +57,12 @@ int tmain(int ,char**)
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	CentralController cc;
+	cc.AddTask(std::shared_ptr<NV122RGB_2C>(
+		new NV122RGB_2C("NV122RGB_2C",
+						readFile("../src/test_frame/glsl/HANDSOUT/NV122RGB_2C/NV122RGB_2C.vs.glsl"),
+						readFile("../src/test_frame/glsl/HANDSOUT/NV122RGB_2C/NV122RGB_2C.fs.glsl"),
+						&cc),
+		&I_Render_Task::I_Render_Task_Deleter));
 	cc.AddTask(std::shared_ptr<HDR2SDR>(
 		new HDR2SDR("HDR2SDR",
 						readFile("../src/test_frame/glsl/HANDSOUT/hdr2sdr/hdr2sdr.vs.glsl"),
@@ -97,12 +103,6 @@ int tmain(int ,char**)
 		new NV12_to_RGB("NV12_to_RGB",
 						readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
 						readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
-						&cc),
-		&I_Render_Task::I_Render_Task_Deleter));
-	cc.AddTask(std::shared_ptr<NV122RGB_2C>(
-		new NV122RGB_2C("NV122RGB_2C",
-						readFile("../src/test_frame/glsl/HANDSOUT/NV122RGB_2C/NV122RGB_2C.vs.glsl"),
-						readFile("../src/test_frame/glsl/HANDSOUT/NV122RGB_2C/NV122RGB_2C.fs.glsl"),
 						&cc),
 		&I_Render_Task::I_Render_Task_Deleter));
 	cc.AddTask(std::shared_ptr<I_Render_Task>(
