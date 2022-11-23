@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<playlistItems version="2.0">
+ <playlistItemRawFile>
+  <id>0</id>
+  <frameRate>24</frameRate>
+  <viewCenterOffsetView0X>0</viewCenterOffsetView0X>
+  <viewCenterOffsetView0Y>0</viewCenterOffsetView0Y>
+  <viewZoomFactorView0>1</viewZoomFactorView0>
+  <viewCenterOffsetView1X>-2159.04</viewCenterOffsetView1X>
+  <viewCenterOffsetView1Y>-1152.53</viewCenterOffsetView1Y>
+  <viewZoomFactorView1>2</viewZoomFactorView1>
+  <absolutePath>file:///home/lull/share/CODE/lopengl/media/texture/bmp/9.yuv</absolutePath>
+  <relativePath>9.yuv</relativePath>
+  <type>YUV</type>
+  <width>1440</width>
+  <height>900</height>
+  <pixelFormat>YUV 4:2:0 8-bit</pixelFormat>
+ </playlistItemRawFile>
+ <playlistItemRawFile>
+  <id>2</id>
+  <frameRate>24</frameRate>
+  <viewCenterOffsetView0X>0</viewCenterOffsetView0X>
+  <viewCenterOffsetView0Y>0</viewCenterOffsetView0Y>
+  <viewZoomFactorView0>1</viewZoomFactorView0>
+  <viewCenterOffsetView1X>45511.2</viewCenterOffsetView1X>
+  <viewCenterOffsetView1Y>28510.5</viewCenterOffsetView1Y>
+  <viewZoomFactorView1>64</viewZoomFactorView1>
+  <absolutePath>file:///home/lull/share/CODE/lopengl/bin/rawYUV.YUV</absolutePath>
+  <relativePath>../../../bin/rawYUV.YUV</relativePath>
+  <type>YUV</type>
+  <width>1440</width>
+  <height>900</height>
+  <pixelFormat>YUV 4:2:0 8-bit</pixelFormat>
+ </playlistItemRawFile>
+ <viewStates>
+  <current>
+   <frameIdx>0</frameIdx>
+   <itemID1>2</itemID1>
+   <centerOffsetX>45511.2</centerOffsetX>
+   <centerOffsetY>28510.5</centerOffsetY>
+   <splitting>1</splitting>
+   <splittingPoint>0.5</splittingPoint>
+   <viewMode>0</viewMode>
+   <zoomFactor>64</zoomFactor>
+  </current>
+ </viewStates>
+</playlistItems>

@@ -12,6 +12,7 @@
 #include <ImGUI/hdr2sdr.h>
 #include <ImGUI/resize.h>
 #include <ImGUI/rgb2nv12.h>
+#include <ImGUI/NV122RGB_2Channel.h>
 static void glfw_error_callback(int error, const char *description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -96,6 +97,12 @@ int tmain(int ,char**)
 		new NV12_to_RGB("NV12_to_RGB",
 						readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.vs.glsl"),
 						readFile("../src/test_frame/glsl/HANDSOUT/nv12_t0_rgb/nv12_t0_rgb.fs.glsl"),
+						&cc),
+		&I_Render_Task::I_Render_Task_Deleter));
+	cc.AddTask(std::shared_ptr<NV122RGB_2C>(
+		new NV122RGB_2C("NV122RGB_2C",
+						readFile("../src/test_frame/glsl/HANDSOUT/NV122RGB_2C/NV122RGB_2C.vs.glsl"),
+						readFile("../src/test_frame/glsl/HANDSOUT/NV122RGB_2C/NV122RGB_2C.fs.glsl"),
 						&cc),
 		&I_Render_Task::I_Render_Task_Deleter));
 	cc.AddTask(std::shared_ptr<I_Render_Task>(

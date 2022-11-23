@@ -107,7 +107,7 @@ struct ProgramObject
     DebugArea(static inline std::atomic<int> use_cnt = 0;);
     void use()
     {
-        DebugArea(ASSERT(use_cnt == 0));
+        DebugArea(ASSERT(use_cnt.load() == 0));
         glUseProgram(getProgram());
         DebugArea(use_cnt++;);
     }
@@ -164,19 +164,19 @@ struct ProgramObject
     // uniform setter
     void setBool(const std::string &name, bool value) const
     {
-        DebugArea(checkExist(getUniforms(), name));
+        DebugArea(if(!checkExist(getUniforms(), name))return);
         std::cerr << fmt::format("{:15} {:<20} {}", "Setbool", name, value) << std::endl;
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), (int)value);
     }
     void setInt(const std::string &name, int value) const
     {
-        DebugArea(checkExist(getUniforms(), name));
+        DebugArea(if(!checkExist(getUniforms(), name))return;);
         std::cerr << fmt::format("{:15} {:<20} {}", "SetInt", name, value) << std::endl;
         glUniform1i(glGetUniformLocation(getProgram(), name.c_str()), value);
     }
     void setFloat(const std::string &name, float value) const
     {
-        DebugArea(checkExist(getUniforms(), name));
+        DebugArea(if(!checkExist(getUniforms(), name))return);
         std::cerr << fmt::format("{:15} {:<20} {}", "SetFloat", name, value) << std::endl;
         glUniform1f(glGetUniformLocation(getProgram(), name.c_str()), value);
     }

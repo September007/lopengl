@@ -5,6 +5,7 @@
 #include <helper/error.h>
 #include <map>
 #include <fmt/format.h>
+#include <helper/fps.h>
 using std::string;
 template <typename T>
 using Cache_Type_Wrapper = CachingWrapper<Universal_Type_Wrapper<T>>;
@@ -24,14 +25,12 @@ inline void checkExist(ProgramObject<true> &pro, const string &name)
 }
 inline void SetProgramParam(ProgramObject<true> &pro,const Universal_Type_Wrapper<int> &i)
 {
-    checkExist(pro, i.GetName());
-    pro.setInt(i.GetName(), i.data);
+    pro.setInt(i.GetName(),i.data);
 }
 
 inline void SetProgramParam(ProgramObject<true> &pro,const Universal_Type_Wrapper<float> &i)
 {
-    checkExist(pro, i.GetName());
-    pro.setFloat(i.GetName(), i.data);
+    pro.setFloat(i.GetName(),i.data);
 }
 inline void SetProgramParam(ProgramObject<true> &pro, const Universal_Type_Wrapper<std::string> &i)
 {
@@ -234,6 +233,23 @@ public:
         Universal_Type_Wrapper<bool> show_compile_output = {"show compile", true};
         auto GetAllAttr() const { return std::tie(shader_refresh_mode, show_editor, show_compile_output); }
     };
+    struct CC_Status : public Check_Render_Task_Completeness<CC_Status>
+    {
+        Universal_Type_Wrapper<int> frame_width = {"frame_width", {}};
+        Universal_Type_Wrapper<int> frame_height = {"frame_height", {}};
+        Universal_Type_Wrapper<int> fps = {"fps", {}};
+        time_point_sampler tps;
+        int tps_fps_fresh_slower = 0;
+        constexpr static int tps_fps_fresh_slower_loop_size = 100;
+        void Tick()
+        {
+            tps.Tick();
+            glfwGetWindowSize(glfwGetCurrentContext(), &frame_width.data, &frame_height.data);
+            if (tps_fps_fresh_slower++ % tps_fps_fresh_slower_loop_size == 0)
+                fps.data = tps.FPS();
+        }
+        auto GetAllAttr() const { return std::tie(frame_width, frame_height,fps); }
+    };
     struct CC_Editor_Options : public Check_Render_Task_Completeness<CC_Editor_Options>
     {
         auto GetAllAttr() const { return std::tie(); }
@@ -245,9 +261,11 @@ public:
     Cache_Group_Wrapper<CC_Options> cc_options = {"common option", CC_Options{}};
     Cache_Group_Wrapper<CC_Editor_Options> cc_editor_options = {"editor option", CC_Editor_Options{}};
     Cache_Group_Wrapper<CC_Compiler_Outputs_Options> cc_compiler_outputs_options = {"compiler output option", CC_Compiler_Outputs_Options{}};
+    Universal_Group_Wrapper<CC_Status> status={"status",{}};
     void Tick()
     try
     {
+        status->Tick();
         if (ImGui::Begin("hot config"))
         {
             if (ImGui::BeginTabBar("Tab Options"))
@@ -260,6 +278,13 @@ public:
                     Draw_element(cc_options);
                     ImGui::EndTabItem();
                 }
+                // status
+                if (ImGui::BeginTabItem("status"))
+                {
+                    Draw_element(status);
+                    ImGui::EndTabItem();
+                }
+                
                 ImGui::EndTabBar();
             }
         }
