@@ -1,4 +1,4 @@
-#version 330
+#version 120
 
 #pragma optimize(off)
 #if __VERSION__<130
@@ -20,7 +20,7 @@ uniform int back_Height;
     #define CASE(val)}if(v_var==val){
     #define DEFAULT()};
 #define ENDSWITCH()}while(false);
-//clang-format on
+// clang-format on
 
 #define EQN_EPS 1e-9f
 
@@ -102,14 +102,14 @@ int mod(in int i,int m){
 // tc: coord of texture pixel
 vec4 PS3_2D(vec2 tc)
 {
-    int scale=2;
-    vec2 block=
-    vec2(144,90);
-    block=vec2(1,1);
-    ivec2 crd=ivec2(
-       0,0
-        );
-    tc=vec2((tc.x+crd.x)/block.x,(tc.y+crd.y)/block.y);
+    // int scale=2;
+    // vec2 block=
+    // vec2(14,9);
+    // block=vec2(1,1);
+    // ivec2 crd=ivec2(
+    //    0,0
+    //     );
+    // tc=vec2((tc.x+crd.x)/block.x,(tc.y+crd.y)/block.y);
     SWITCH(0)
     {
         CASE(0)
@@ -129,14 +129,28 @@ vec4 PS3_2D(vec2 tc)
         // vec4 Ucolor=TEXTURE2D(tex_UV,tc_u);
         // vec4 Vcolor=TEXTURE2D(tex_UV,tc_v);
 
-        float ux_int_coord = (int(( tc.x *overlay_Width)))/2*2;
-        float vx_int_coord=ux_int_coord+1;
+        // float ux_int_coord = (int(( tc.x *overlay_Width)))/2*2;
+        // float vx_int_coord=ux_int_coord+1;
 
+        // vec4 Ycolor=TEXTURE2D(tex_Y,tc);
+        // vec4 Ucolor=TEXTURE2D(tex_UV,vec2(ux_int_coord/overlay_Width,tc.y));
+        // vec4 Vcolor=TEXTURE2D(tex_UV,vec2(vx_int_coord/overlay_Width,tc.y));
+        if(tc.x>1||tc.x<0) discard;
+        
+        int yy_int=int(tc.y*overlay_Height);
+        int uy_int=yy_int/2;
+        // int ux_int=int((float(mod(yy_int,2))+tc.x )*overlay_Width/2);
+        // vec2 UC=vec2(float(ux_int)/overlay_Width,float(uy_int)/(overlay_Height/2));
+        int ux_int=int((float(mod(yy_int,2))+tc.x )*overlay_Width/2);
+        vec2 UC=vec2(float(ux_int)/overlay_Width,float(uy_int)/(overlay_Height/2));
+        //return vec4(UC,0,1);
+        //UC=vec2(0.1,0.4);
         vec4 Ycolor=TEXTURE2D(tex_Y,tc);
-        vec4 Ucolor=TEXTURE2D(tex_UV,vec2(ux_int_coord/overlay_Width,tc.y));
-        vec4 Vcolor=TEXTURE2D(tex_UV,vec2(vx_int_coord/overlay_Width,tc.y));
-        
-        
+        vec4 Ucolor=TEXTURE2D(tex_UV,UC);
+        vec4 Vcolor=TEXTURE2D(tex_UV,vec2(float(ux_int+1)/overlay_Width,float(uy_int)/(overlay_Height/2)));
+        if(UC.x>1||UC.x<0)discard;
+        if(UC.y>1||UC.y<0)discard; 
+
         vec3 yuv=vec3(
         Ycolor.x
         ,
@@ -144,14 +158,27 @@ vec4 PS3_2D(vec2 tc)
         ,
         Vcolor.x
         );  
-        
-        vec4 color=choosMode(yuv,mode);
-        color=vec4(yuv,1);
-       // if(tc.x>0.5) color.yz=vec2(0.5,0.5);
-        //color=TEXTURE2D(tex_UV,vec2(vx_int_coord/overlay_Width,tc.y));
-        return color;
-        
-        break;
+        //yuv.yz=UC.xy;
+        vec4 color=vec4(yuv,1);
+        //color=vec4(UC,0,1);
+        //=color=choosMode(yuv,mode);
+        SWITCH( 4 ){
+            CASE(0)
+            return color;
+            CASE(1)
+            return TEXTURE2D(tex_UV,UC);
+            CASE(2)
+            return TEXTURE2D(tex_UV,tc);
+            CASE(3)
+            return vec4(UC,0,1);
+            CASE(4)
+            return vec4(Ucolor);
+            CASE(5)
+            return vec4(Vcolor);
+            
+            DEFAULT()
+            ENDSWITCH()
+        }
         CASE(1)
         discard;
         float bw=float(back_Width);
