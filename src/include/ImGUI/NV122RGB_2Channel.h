@@ -88,7 +88,7 @@ struct NV122RGB_2C : public I_Render_Task
         auto unis = program.getUniforms();
         auto attrs = program.getAttributes();
         tex_Y = Helper::CreateTextureByData(GL_TEXTURE1, GL_RED, GL_RED, T(yuv_data.data()), rgb_data->w, rgb_data->h );
-        tex_UV = Helper::CreateTextureByData(GL_TEXTURE2, GL_RED, GL_RED, T(yuv_data.data()+rgb_data->w*rgb_data->h), rgb_data->w, rgb_data->h*0.5 );
+        tex_UV = Helper::CreateTextureByData(GL_TEXTURE2, GL_RG, GL_RG, T(yuv_data.data()+rgb_data->w*rgb_data->h), rgb_data->w/2, rgb_data->h*0.5 );
        // tex_UV = Helper::CreateTextureByData(GL_TEXTURE2,  GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, T(yuv_data.data()+rgb_data->w*rgb_data->h), rgb_data->w*0.25, rgb_data->h*0.5 );
         program.setInt("tex_Y", tex_Y.targetTexture - GL_TEXTURE0);
         program.setInt("tex_UV", tex_UV.targetTexture - GL_TEXTURE0);
