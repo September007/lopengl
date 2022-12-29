@@ -102,14 +102,6 @@ int mod(in int i,int m){
 // tc: coord of texture pixel
 vec4 PS3_2D(vec2 tc)
 {
-    // int scale = 2;
-    // vec2 block=
-    // vec2(14,9);
-    // block = vec2(1,1);
-    // ivec2 crd = ivec2(
-        //    0,0
-    //     );
-    // tc = vec2((tc.x + crd.x)/block.x,(tc.y + crd.y)/block.y);
     SWITCH(2)
     {
         CASE(0)

@@ -5,6 +5,10 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#define STB_IMAGE_IMPLEMENTATION
+#include <helper/stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <helper/stb_image_write.h>
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -17,6 +21,8 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
     }
 }
+
+constexpr int window_width = 800, window_height = 600;
 int main()
 {
     glfwInit();
@@ -25,7 +31,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    auto window = glfwCreateWindow(800, 600, "Learning OpenGL", NULL, NULL);
+    auto window = glfwCreateWindow(window_width, window_height, "Learning OpenGL", NULL, NULL);
     if (!window)
     {
         std::cout << "create widnow failed" << std::endl;
@@ -42,8 +48,25 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // shader && program
-    ShaderObject vs = {GL_VERTEX_SHADER, readFile("../media/shaders/02.hellow-shader/this.vs.glsl")};
-    ShaderObject fs = {GL_FRAGMENT_SHADER, readFile("../media/shaders/02.hellow-shader/this.fs.glsl")};
+    ShaderObject vs = {GL_VERTEX_SHADER, R"(#version 330 core
+
+layout(location=0)in vec3 aPos;
+layout(location=1)in vec3 aCol;
+
+out vec2 texCoord;
+uniform vec4 offset;
+out vec4 color;
+void main(){
+    texCoord=gl_Position=vec4(aPos,1)+offset;
+    color=vec4(aCol,1.f);
+})"};
+    ShaderObject fs = {GL_FRAGMENT_SHADER, R"(#version 330
+in vec2 texCoord;
+uniform sampler2D tex;
+void main(){
+    FragColor=texture(tex,texCoord);
+}
+    )"};
     // return GL_TRUE , which is 1
     GLint shaderCompileStatus[] = {vs.getInfo(GL_COMPILE_STATUS), fs.getInfo(GL_COMPILE_STATUS)};
     ProgramObject program = Helper::CreateProgram(vs, fs);
@@ -68,7 +91,6 @@ int main()
     // 2. 把顶点数组复制到缓冲中供OpenGL使用 //
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    auto attribitues = getAttributes(program.getProgram());
     // 3. 设置顶点属性指针 //
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
@@ -78,6 +100,46 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
+    /* triangle index */
+    int lastIndex = 0;
+    /* packing pbo */
+    constexpr int numof_pboIds = 2;
+    GLuint pboIds[numof_pboIds];
+    glGenBuffers(numof_pboIds, pboIds);
+    for (int i = 0; i < numof_pboIds; ++i)
+    {
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pboIds[i]);
+        glBufferData(GL_PIXEL_PACK_BUFFER, window_width * window_height, 0, GL_DYNAMIC_READ);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    }
+    /* unpacking pbo, to provide image data*/;
+    constexpr int numof_upboIds = 2;
+    GLuint upboIds[numof_pboIds];
+    glGenBuffers(numof_upboIds, upboIds);
+    constexpr char *ifiles[] = {
+        "../media/texture/bmp/2004050204170.bmp",
+        "../media/texture/bmp/Rainbow.bmp"};
+    stbi_uc *image_datas[numof_upboIds];
+    struct image_info
+    {
+        int width, height, nChannels;
+    } iinfos[2];
+    for (int i = 0; i < numof_upboIds; ++i)
+    {
+        image_datas[i] = stbi_load(ifiles[i], &iinfos[i].width, &iinfos[i].height, &iinfos[i].nChannels, 3);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, upboIds[i]);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, iinfos[i].width * iinfos[i].height * iinfos[i].nChannels, image_datas[i], GL_DYNAMIC_COPY);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    }
+    GLuint texObj;
+    glGenTextures(1,&texObj);
+    glBindTexture(GL_TEXTURE_2D,texObj);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXUTURE_2D,0,GL_RGB,1,1,0,GL_RGB,GL_UNSIGNED_BYTE,0);// data will be bind after
+    glBindTexture(GL_TEXTURE_2D,0);
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -93,53 +155,20 @@ int main()
 
         auto uniforms = program.getUniforms();
         glUniform4f(program.getUniformLocation("offset"), sinf(tm) / 4, cosf(tm) / 4, 0, 0);
+        program.setInt("tex",texObj);
 
         glBindVertexArray(VAO);
         if (itm & 2)
+        {
             glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        }
         else
+        {
             glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 3 + (GLuint *)0);
-
+        }
+        glBindBuffer()
         glfwSwapBuffers(window);
     }
 
-    GLubyte *(*p_load_glGetString)(GLenum) = (GLubyte * (*)(GLenum)) glfwGetProcAddress("glGetString");
-    std::atomic_int cnt=0;
-    auto gl_init = [&]()
-    {
-        thread_local static bool __inited = false;
-        static std::mutex __m;
-        std::lock_guard __(__m);
-        if (!__inited)
-        {
-            __inited = true;
-            GLFWwindow *this_window = glfwCreateWindow(640, 480, "Second Window", NULL, window);
-            glfwMakeContextCurrent(this_window);
-        }
-    };
-    auto child_thread = [&]
-    {
-        auto cur_ctx=glfwGetCurrentContext();
-        int index=cnt++;
-        gl_init();
-        for(int i =0;i<1000;++i){
-            p_load_glGetString(GL_VERSION);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        } };
-    std::vector<std::thread> childs;
-    for(int i=0;i<200;++i)
-        childs.emplace_back(child_thread);
-
-    for(int i =0;i<1000;++i)
-    {
-        p_load_glGetString(GL_VERSION);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    glBindVertexArray(VAO);
-    
-    for(auto &child:childs)
-        child.join();
-    glfwTerminate();
-    glBindVertexArray(VAO);
     return 0;
 }

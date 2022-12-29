@@ -48,7 +48,7 @@ bool iszero(float value)
 bool lessOrEqul31(vec3 v,float f){
 	return v.x<=f&&v.y<=f&&v.z<=f;
 }
-float log10(float f){return log(f)/log(10);}
+float log10(float f){return log(f)/log(10.f);}
 int XX(){
 	return 1;
 }
